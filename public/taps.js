@@ -132,7 +132,7 @@ function refresh_taps() {
                 else {
                     var marker = place_tap(newtap);
                 }
-            }
+            });
             console.log("tapset after:", tapset);
             busy = 0;
         }

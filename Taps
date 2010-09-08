@@ -1,0 +1,58 @@
+#!/usr/bin/env perl
+
+use Mojolicious::Lite;
+
+use DBI;
+my $dbh = DBI->connect('dbi:Pg:dbname=taps') or die $!;
+my $select_taps_in_bounds = $dbh->prepare(q {
+    SELECT tid, lat, lng FROM tap_loc
+    WHERE lat <= ? AND lat >= ?
+      AND lng <= ? AND lng >= ?
+});
+my $insert_new_tap = $dbh->prepare(q {
+    INSERT INTO tap_loc (lat, lng) VALUES (?, ?)
+    RETURNING tid
+});
+my $insert_tap_details = $dbh->prepare(q {
+    INSERT INTO tap_details (tid, comment) VALUES (?, ?)
+});
+
+get '/' => 'index';
+
+get '/get_taps_in_bounds' => sub {
+    my $self = shift;
+    my $ne_lat = $self->param("ne_lat");
+    my $ne_lng = $self->param("ne_lng");
+    my $sw_lat = $self->param("sw_lat");
+    my $sw_lng = $self->param("sw_lng");
+
+    $self->app->log->debug("Params: NE: $ne_lat, $ne_lng SW: $sw_lat, $sw_lng");
+    
+    $select_taps_in_bounds->execute(
+        $ne_lat, $sw_lat,
+        $ne_lng, $sw_lng
+    );
+    my $taps = $select_taps_in_bounds->fetchall_hashref("tid");
+    use YAML::Syck;
+    $self->app->log->debug("taps: ".Dump($taps));
+    $self->render_json($taps);
+};
+
+get '/create_tap' => sub {
+    my $self = shift;
+    my $lat = $self->param("lat");
+    my $lng = $self->param("lng");
+    my $tid = $insert_new_tap->execute($lat, $lng);
+
+    # right, so there's a main comment on each tap that can be edited by any
+    # trusted user. if edits are contested the edits can become the start of
+    # a discussion thread. "Soandso suggests the comment: Blah"; the user that   
+    # caused the contention starts their discussion. voting, etc.
+    my $comment = $self->param("comment");
+    $insert_tap_details->execute($tid, $comment);
+
+    $self->render_json({tid => $tid});
+};
+
+app->start;
+__DATA__

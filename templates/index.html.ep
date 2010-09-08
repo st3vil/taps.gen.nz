@@ -31,8 +31,8 @@ background: url('http://www.sonofthesouth.net/union-generals/sioux-indians/pictu
 <%== content %>
 <div id="menu">
 <p> Hello.
-    <span id="zoom_in_to_see_taps"><a href="javascript:map.setZoom(18);">Zoom in</a> to see the taps.</span>
-    <input id="create_tap" type="button" value="Create Tap"></input>
+    <span id="not_showing_taps"><a href="map.setZoom(18);">Zoom in</a> to see the taps.</span>
+    <span id="create_tap"></span>
 </p>
 </div>
 <div id="map_canvas" style="width:100%; height:100%"></div>

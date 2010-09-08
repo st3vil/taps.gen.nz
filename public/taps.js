@@ -30,12 +30,12 @@ function initialise() {
 }
 
 // {{{ ui re. zoom level
-function ui_for_zoomlevel (for_reinit) {
+function ui_for_zoomlevel (for_createtap_reinit) {
     var newzoom = map.getZoom();
     if (oldzoom < 18 && newzoom >= 18) {
         show_taps();
     }
-    else if ((for_reinit || oldzoom < 19) && newzoom >= 19) {
+    else if ((for_createtap_reinit || oldzoom < 19) && newzoom >= 19) {
         show_create_tap_button();
     }
     else if (oldzoom >= 18 && newzoom < 18) {
@@ -62,7 +62,7 @@ function dont_show_taps () {
 }
 
 function show_create_tap_button () {
-    $("#create_tap").contents(
+    $("#create_tap").html(
         '<input id="create_tap_button" type="button" value="Create Tap"></input>'
     );
     $("#create_tap_button").click(function () {
@@ -71,7 +71,7 @@ function show_create_tap_button () {
 }
 
 function dont_show_create_tap_button () {
-    $("#create_tap").contents("Zoom in to create taps.");
+    $("#create_tap").html("Zoom in to create taps.");
 }
 // }}}
 
@@ -115,10 +115,8 @@ function refresh_taps() {
           sw_lat: southWest.lat(),
           sw_lng: southWest.lng() },
         function (newtapset) {
-            console.log("tapset before:", tapset);
             $.each(tapset, function(tid, tap) {
                 if (tid in newtapset) {
-                    console.log("Tap "+tid+" stays on");
                 }
                 else {
                     console.log("Tap "+tid+" goes away");
@@ -133,7 +131,7 @@ function refresh_taps() {
                     var marker = place_tap(newtap);
                 }
             });
-            console.log("tapset after:", tapset);
+            console.log("tapset:", tapset);
             busy = 0;
         }
     );
@@ -141,7 +139,6 @@ function refresh_taps() {
 }
 
 function place_tap(newtap) {
-    console.log("Placing new tap", newtap);
     var marker = new google.maps.Marker({
         position: new google.maps.LatLng(
             newtap.lat, newtap.lng),
@@ -149,19 +146,27 @@ function place_tap(newtap) {
         map: map,
         icon: 'drink.png',
     });
-    console.log("new tid: ", newtap.tid);
     if (newtap.tid) {
+        marker.tid = newtap.tid;
         tapset[newtap.tid] = marker;
     }
     console.log("Marker: ", marker);
     return marker;
 }
 
-function unplace_tap(tid) {
-    var marker = tapset[tid];
-    marker.setMap();
+function unplace_tap(tap) {
+    var tid;
+    var marker;
+    if (typeof(tap) == "object") {
+        marker = tap;
+        tid = marker.tid;
+    }
+    else {
+        tid = tap;
+        marker = tapset[tid];
+    }
 
+    marker.setMap();
     delete tapset[tid];
 }
 
-"yeah baby"

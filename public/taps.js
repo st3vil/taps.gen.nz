@@ -1,7 +1,8 @@
 var map;
 var tapset = {};
 var server = "http://taps.gen.nz:3000/";
-var busy = 0;
+var ajax_busy = 0;
+var ajax_too_soon = 0;
 var oldzoom = 18;
 var showing_taps = 1; // bool
 function initialise() {
@@ -95,14 +96,26 @@ function start_placing_tap() {
     $("#cancel").click(function () { cancel(); });
 }
 
-
-
+var refresh_taps_when_ajax_ready = 0;
+function ajax_ready() {
+    ajax_too_soon = 0;
+    if (refresh_taps_when_ajax_ready) {
+        refresh_taps_when_ajax_ready = 0;
+        refresh_taps();
+    }
+}
 function refresh_taps() {
-    // todo ajax throttling
-    if (busy || showing_taps == 0) {
+    if (ajax_busy || showing_taps == 0) {
         return;
     }
-    busy = 1;
+    if (ajax_too_soon) {
+        refresh_taps_when_ajax_ready = 1;
+        return;
+    }
+    else {
+        ajax_too_soon = 1;
+        setTimeout("ajax_ready()", 1000);
+    }
 
     var bounds = map.getBounds();
     console.log("getting new tap data.")

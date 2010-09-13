@@ -14,17 +14,24 @@ my $insert_new_tap = $dbh->prepare(q {
     RETURNING tid
 });
 my $insert_tap_details = $dbh->prepare(q {
-    INSERT INTO tap_details (tid, comment) VALUES (?, ?)
+    INSERT INTO tap_details (tid, title, comment) VALUES (?, ?, ?)
+});
+my $select_tap_details = $dbh->prepare(q {
+    SELECT tid, title, comment FROM tap_details
+    WHERE tid = ?
 });
 
 get '/' => 'index';
 
 get '/get_taps_in_bounds' => sub {
     my $self = shift;
-    my $ne_lat = $self->param("ne_lat");
-    my $ne_lng = $self->param("ne_lng");
-    my $sw_lat = $self->param("sw_lat");
-    my $sw_lng = $self->param("sw_lng");
+    my $bounds = $self->param("bounds");
+    my ($ne_lat, $ne_lng, $sw_lat, $sw_lng) = $bounds =~ m{ \A
+        ( -?\d+\.?\d* ) ,
+        ( -?\d+\.?\d* ) \t
+        ( -?\d+\.?\d* ) ,
+        ( -?\d+\.?\d* )
+        \Z }xs;
 
     $self->app->log->debug("Params: NE: $ne_lat, $ne_lng SW: $sw_lat, $sw_lng");
     
@@ -33,9 +40,31 @@ get '/get_taps_in_bounds' => sub {
         $ne_lng, $sw_lng
     );
     my $taps = $select_taps_in_bounds->fetchall_hashref("tid");
-    use YAML::Syck;
-    $self->app->log->debug("taps: ".Dump($taps));
+    $self->app->log->debug("taps:\n".join("\n",
+        map { join("\t", values %$_) } values %$taps));
     $self->render_json($taps);
+};
+
+get '/tap_details' => sub {
+    my $self = shift;
+    my $tid = $self->param("tid");
+
+    $select_tap_details->execute($tid);
+    my $tap = $select_tap_details->fetchrow_hashref;
+    if (!$tap) {
+        $tap = { title => undef };
+    }
+    $self->render_json($tap);
+};
+
+get '/edit_tap_details' => sub {
+    my $self = shift;
+    my $tid = $self->param("tid");
+
+
+    $select_tap_details->execute($tid);
+    my $tap = $select_tap_details->fetchrow_hashref;
+    $self->render_json($tap);
 };
 
 get '/create_tap' => sub {
@@ -44,10 +73,6 @@ get '/create_tap' => sub {
     my $lng = $self->param("lng");
     my $tid = $insert_new_tap->execute($lat, $lng);
 
-    # right, so there's a main comment on each tap that can be edited by any
-    # trusted user. if edits are contested the edits can become the start of
-    # a discussion thread. "Soandso suggests the comment: Blah"; the user that   
-    # caused the contention starts their discussion. voting, etc.
     my $comment = $self->param("comment");
     $insert_tap_details->execute($tid, $comment);
 

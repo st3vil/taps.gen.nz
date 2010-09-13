@@ -8,6 +8,7 @@ CREATE TABLE tap_loc (
 
 CREATE TABLE tap_details (
     tid integer references tap_loc(tid) on delete cascade,
+    title text,
     comment text
 );
 

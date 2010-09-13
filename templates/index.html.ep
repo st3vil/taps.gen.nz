@@ -30,10 +30,10 @@ background: url('http://www.sonofthesouth.net/union-generals/sioux-indians/pictu
 <body onload="initialise()">
 <%== content %>
 <div id="menu">
-<p> Hello.
-    <span id="not_showing_taps"><a href="map.setZoom(18);">Zoom in</a> to see the taps.</span>
-    <span id="create_tap"></span>
-</p>
+
+<span id="not_showing_taps">Zoom in to see the taps.</span>
+<span id="create_tap"></span>
+
 </div>
 <div id="map_canvas" style="width:100%; height:100%"></div>
 </body>

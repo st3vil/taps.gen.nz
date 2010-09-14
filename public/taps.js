@@ -17,18 +17,15 @@ function initialise() {
     );
 
     ui_for_zoomlevel("init");
-    google.maps.event.addListener(
-        map, 'zoom_changed', function () {
-            ui_for_zoomlevel();
-        }
-    );
     
     google.maps.event.addListener(
         map, 'bounds_changed', function () {
             var newzoom = map.getZoom();
             if (newzoom <= oldzoom) {
-                console.log("bounds changed");
                 refresh_taps();
+            }
+            if (oldzoom != newzoom) {
+                ui_for_zoomlevel();
             }
         }
     );
@@ -36,7 +33,6 @@ function initialise() {
 
 // {{{ ui re. zoom level
 function ui_for_zoomlevel (init) {
-    console.log("ui_for_zoomlevel");
     var newzoom = map.getZoom();
     if ((init || oldzoom < 18) && newzoom >= 18) {
         show_taps();
@@ -81,36 +77,14 @@ function dont_show_create_tap_button () {
 }
 // }}}
 
-var almost_a_tap;
-function start_placing_tap() {
-    // user can abort by clicking other things
-    var enplacement = google.maps.event.addListener(
-        map, 'click', function(location) {
-            var latLng = location.latLng;
-            almost_a_tap = place_tap({
-                title: "Garden Variety Tap",
-                lat: latLng.lat(),
-                lng: latLng.lng(),
-            });
-            tap_details(almost_a_tap);
-        }
-    );
-    
-    $("#create_tap")
-        .attr("disabled", "disabled")
-        .attr("value", "Now click on the map...")
-        .append('<input type="button" value="cancel" id="cancel"></input>');
-    $("#cancel").click(function () { cancel_placing_tap(); });
-}
-
+// {{{ details
 var bubble = new Bubble;
 function Bubble () {
     this.open = open;
     this.close = close;
-    var open_on_thing;
     var infowindow;
     function open (thing, content) {
-        if (infowindow && open_on_thing == thing) {
+        if (infowindow && this.current_thing === thing) {
             infowindow.setContent(content);
         }
         else {
@@ -123,9 +97,9 @@ function Bubble () {
             google.maps.event.addListener(infowindow, 'closeclick',
                 function () { infowindow = null; }
             );
-            infowindow.open(map, thing);
+            infowindow.open(map, thing.marker);
         }
-        open_on_thing = thing;
+        this.current_thing = thing;
     }
     function close () {
         infowindow.close;
@@ -145,44 +119,132 @@ function tap_details(tap) {
         );
         return;
     }
-    bubble.open(tap,
-        "Title: "+tap.details.title+"<br/>\n"
-        + "Comment:<br/>\n"
-        + "<p>"+tap.details.comment+"</p>"
-        + '<a href="#" id="edit_tap_button">edit</a>'
-    );
-    $("#edit_tap_button").click(function () {
-        edit_tap(tap);
-    });
+    var content = '<span id="tap_details">'+"\n";
+    content += '<p>'+ tap.details.blurb +'</p>';
+    if (tap.details.no_handle) {
+        content += '<img src="/wrench.png" id="use_a_wrench"/>'
+            +'<label for="use_a_wrench">No Handle!</label>';
+    }
+    if (tap.details.nozzled) {
+        content += '<img src="/thumb_up.png" id="lovely"/>'
+            +'<label for="lovely">Nozzled</label>';
+    }
+    content += '<br/>';
+    content += '<span class="link" id="edit_tap_button" onclick="edit_tap();">edit</span>';
+    content += '</span>';
+    bubble.open(tap, content);
 }
 
-function edit_tap(tap) {
-    bubble.open(tap,
-        '<form action="#" id="edit_tap_form">'
-        + '<input name="title" id="edit_tap_title" value="'
-            +tap.details.title+'"></input>'
-        + '<span id="save_tap_button">save</span>'
-        + '</form>'
+var almost_a_tap;
+function start_placing_tap() {
+    var enplacement = google.maps.event.addListener(
+        map, 'click', function(location) {
+            var latLng = location.latLng;
+            almost_a_tap = place_tap({
+                lat: latLng.lat(),
+                lng: latLng.lng(),
+            });
+            edit_tap(almost_a_tap);
+        }
     );
-    $("#save_tap_button").click(function () {
-        edit_tap_submit(tap);
-    });
-}
-
-function edit_tap_submit(bubble, tap) {
-    tap.title = $("#edit_tap_title").val();
     
-    console.log("Yeahp");
+    $("#create_tap")
+        .attr("disabled", "disabled")
+        .attr("value", "Now click on the map...")
+        .append('<input type="button" value="cancel" id="cancel"></input>');
+    $("#cancel").click(function () { cancel_placing_tap(emplacement); });
 }
-
-function cancel_placing_tap() {
+function cancel_placing_tap(emplacement) {
     $("#create_tap")
         .removeAttr("disabled")
         .attr("value", "Create Tap");
     google.maps.event.removeListener(enplacement);
 }
 
-// {{{ tap mapping
+function edit_tap(tap) {
+    if (!tap) {
+        tap = bubble.current_thing;
+    }
+    if (!tap.details) {
+        tap.details = {
+            blurb: "Water!",
+        };
+    }
+
+    console.log("edit_tap", tap);
+
+    var no_handle_checkedness = "";
+    if (tap.details.no_handle) {
+        no_handle_checkedness = ' checked="checked"';
+    }
+    var nozzled_checkedness = "";
+    if (tap.details.nozzled) {
+        nozzled_checkedness = ' checked="checked"';
+    }
+
+    bubble.open(tap,
+'<form action="#" id="edit_tap_form">' +
+'<textarea style="width: 95%" name="blurb" id="edit_tap_blurb">'+tap.details.blurb+'</textarea><br/>' +
+'<input type="checkbox" name="no_handle" id="edit_tap_no_handle"'+no_handle_checkedness+
+'></input><label for="no_handle">No handle</label><br/>' +
+'<input type="checkbox" name="nozzled" id="edit_tap_nozzled"'+nozzled_checkedness+
+'></input><label for="nozzled">Nozzled</label><br/>' +
+'<span class="link" id="save_tap_button" onclick="edit_tap_submit();">save</span>' +
+'<span class="link" id="cancel_tap_button" onclick="edit_tap_cancel();" style="float: right">cancel</span>' +
+'</form>'
+    );
+}
+
+function edit_tap_cancel(tap) {
+    if (!tap) {
+        tap = bubble.current_thing;
+    }
+    tap_details(tap);
+}
+
+function edit_tap_submit(tap) {
+    if (!tap) {
+        tap = bubble.current_thing;
+    }
+    $("#edit_tap_form").addClass("thinking");
+    tap.details.blurb = $("#edit_tap_blurb").val();
+    tap.details.no_handle = $("#edit_tap_no_handle:checked").length;
+    tap.details.nozzled = $("#edit_tap_nozzled:checked").length;
+
+    console.log("submit tap", tap.details.no_handle, tap.details.nozzled, tap);
+   
+    if (tap.tid) {
+        $.getJSON(
+            server + "edit_tap_details",
+            { tid: tap.tid,
+              blurb: tap.details.blurb,
+              no_handle: tap.details.no_handle,
+              nozzled: tap.details.nozzled },
+            function (tapdetails) {
+                tap.details = tapdetails;
+                tap_details(tap);
+            }
+        );
+    }
+    else {
+        console.log("new tap", tap);
+        $.getJSON(
+            server + "create_tap",
+            { lat: tap.lat,
+              lng: tap.lng,
+              blurb: tap.details.blurb,
+              no_handle: tap.details.no_handle,
+              nozzled: tap.details.nozzled },
+            function (tapdetails) {
+                tap.details = tapdetails;
+                tap_details(tap);
+            }
+        );
+    }
+}
+// }}}
+
+// {{{ tap plotting
 var refresh_taps_when_ajax_ready = 0;
 function ajax_ready() {
     ajax_too_soon = 0;
@@ -241,39 +303,38 @@ function refresh_taps() {
 }
 // }}}
 
-function place_tap(newtap) {
-    var marker = new google.maps.Marker({
-        position: new google.maps.LatLng(newtap.lat, newtap.lng),
-        title: newtap.title,
+function place_tap(tap) {
+    tap.marker = new google.maps.Marker({
+        position: new google.maps.LatLng(tap.lat, tap.lng),
         map: map,
         icon: 'drink.png',
     });
-    if (newtap.tid) {
-        marker.tid = newtap.tid;
-        tapset[newtap.tid] = marker;
+
+    if (tap.tid) {
+        tapset[tap.tid] = tap;
     }
 
-    google.maps.event.addListener(marker, 'click', function (clickevent) {
-        tap_details(marker);
-    });
+    google.maps.event.addListener(tap.marker, 'click',
+        function (clickevent) { tap_details(tap); }
+    );
 
-    console.log("Marker: ", marker);
-    return marker;
+    console.log("Tap placed: ", tap);
+    return tap;
 }
 
-function unplace_tap(tap) {
+function unplace_tap(tapish) {
     var tid;
-    var marker;
-    if (typeof(tap) == "object") {
-        marker = tap;
-        tid = marker.tid;
+    var tap;
+    if (typeof(tapish) == "object") {
+        tap = tapish;
+        tid = tap.tid;
     }
     else {
-        tid = tap;
-        marker = tapset[tid];
+        tid = tapish;
+        tap = tapset[tid];
     }
 
-    marker.setMap();
+    tap.marker.setMap();
     delete tapset[tid];
 }
 

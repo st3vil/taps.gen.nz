@@ -14,10 +14,10 @@ my $insert_new_tap = $dbh->prepare(q {
     RETURNING tid
 });
 my $insert_tap_details = $dbh->prepare(q {
-    INSERT INTO tap_details (tid, title, comment) VALUES (?, ?, ?)
+    INSERT INTO tap_details (tid, blurb, no_handle, nozzled) VALUES (?, ?, ?, ?)
 });
 my $select_tap_details = $dbh->prepare(q {
-    SELECT tid, title, comment FROM tap_details
+    SELECT tid, blurb, no_handle, nozzled FROM tap_details
     WHERE tid = ?
 });
 
@@ -47,23 +47,18 @@ get '/get_taps_in_bounds' => sub {
 
 get '/tap_details' => sub {
     my $self = shift;
-    my $tid = $self->param("tid");
-
-    $select_tap_details->execute($tid);
-    my $tap = $select_tap_details->fetchrow_hashref;
-    if (!$tap) {
-        $tap = { title => undef };
-    }
+    my $tap = read_tap_details($self->param("tid"));
     $self->render_json($tap);
 };
 
 get '/edit_tap_details' => sub {
     my $self = shift;
-    my $tid = $self->param("tid");
-
-
-    $select_tap_details->execute($tid);
-    my $tap = $select_tap_details->fetchrow_hashref;
+    my $tap = write_tap_details(
+        $self->param("tid"),
+        $self->param("blurb"),
+        $self->param("no_handle"),
+        $self->param("nozzled"),
+    );
     $self->render_json($tap);
 };
 
@@ -73,11 +68,37 @@ get '/create_tap' => sub {
     my $lng = $self->param("lng");
     my $tid = $insert_new_tap->execute($lat, $lng);
 
-    my $comment = $self->param("comment");
-    $insert_tap_details->execute($tid, $comment);
+    $self->app->log->debug("new tap tid: $tid");
 
-    $self->render_json({tid => $tid});
+    my $tap = write_tap_details(
+        $self->param("tid"),
+        $self->param("blurb"),
+        $self->param("no_handle"),
+        $self->param("nozzled"),
+    );
+
+    $self->render_json($tap);
 };
+
+sub read_tap_details {
+    my $tid = shift;
+
+    $select_tap_details->execute($tid);
+    my $tap = $select_tap_details->fetchrow_hashref;
+    return {
+        tid => $tid,
+        blurb => $tap->{blurb} || "Water!",
+        no_handle => $tap->{no_handle},
+        nozzled => $tap->{nozzled},
+    }
+}
+
+sub write_tap_details {
+    my $tid = shift;
+    $dbh->do("delete from tap_details where tid = ?", undef, $tid);
+    $insert_tap_details->execute($tid, @_);
+    return read_tap_details($tid);
+}
 
 app->start;
 __DATA__

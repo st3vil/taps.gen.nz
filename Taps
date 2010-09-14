@@ -62,6 +62,25 @@ get '/edit_tap_details' => sub {
     $self->render_json($tap);
 };
 
+get '/move_tap' => sub {
+    my $self = shift;
+    my $tid = $self->param("tid");
+    my ($lat, $lng) = $self->param("location") =~
+        m{\A( -?\d+\.?\d* ),( -?\d+\.?\d* )\Z}xs;
+
+    $dbh->do("UPDATE tap_loc SET lat = ?, lng = ? WHERE tid = ?",
+        undef, $lat, $lng, $tid);
+    $self->render_json({okay=>":)"});
+};
+
+get '/delete_tap' => sub {
+    my $self = shift;
+    my $tid = $self->param("tid");
+    $dbh->do("DELETE FROM tap_loc WHERE tid = ?", undef, $tid);
+
+    $self->render_json({okay=>"gone"});
+};
+
 get '/create_tap' => sub {
     my $self = shift;
     my $lat = $self->param("lat");
@@ -71,7 +90,7 @@ get '/create_tap' => sub {
     $self->app->log->debug("new tap tid: $tid");
 
     my $tap = write_tap_details(
-        $self->param("tid"),
+        $tid,
         $self->param("blurb"),
         $self->param("no_handle"),
         $self->param("nozzled"),
@@ -95,6 +114,7 @@ sub read_tap_details {
 
 sub write_tap_details {
     my $tid = shift;
+    # replace this with a pl/pgsql history function
     $dbh->do("delete from tap_details where tid = ?", undef, $tid);
     $insert_tap_details->execute($tid, @_);
     return read_tap_details($tid);

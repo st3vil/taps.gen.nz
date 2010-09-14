@@ -12,11 +12,13 @@ background: url('http://www.sonofthesouth.net/union-generals/sioux-indians/pictu
     border:1px solid black;
 }
 .thinking { opacity: 0.4 }
+#tap_details { width: 30em }
 #tap_details img {
 margin: 2px;
 position: relative;
 top: 4px;
 }
+#edit_tap_blurb { width:20em; height:7em }
 label {
     font-size: small;
     color: gray;

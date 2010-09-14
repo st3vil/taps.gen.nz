@@ -12,8 +12,15 @@
 <%== content %>
 <div id="menu">
 
-<span id="not_showing_taps">Zoom in to see the taps.</span>
-<span id="create_tap"></span>
+<span id="not_showing_taps" style="display:none">Zoom in to see the taps.</span>
+<span id="create_tap">
+
+<span id="create_tap_buttons">
+<span id="create_tap_not">Zoom in closer to create taps</span>
+<input id="create_tap_button" type="button" value="Create Tap" onclick="create_tap();" style="display:none"></input>
+<input id="cancel_create_tap_button" type="button" value="Cancel" onclick="stop_creating_tap();" style="display:none"></input>
+<span id="create_tap_howto" style="display:none">Now click where on the map...</span>
+</span>
 
 </div>
 <div id="map_canvas" style="width:100%; height:100%"></div>

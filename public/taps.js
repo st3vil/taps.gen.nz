@@ -62,12 +62,14 @@ function user_login_form_submit () {
         { user: name,
           password: password },
         function (result) {
-            cancel_usering();
+            cancel_usering("almost");
             if (result.error) {
+                cancel_usering();
                 $("#user_login_failed").fadeIn();
                 setTimeout("user_login_failed_tidyup()", 3000);
             }
             else {
+                $("#cancel_usering_button").fadeOut();
                 user_logged_in_as(name);
             }
         }
@@ -77,16 +79,15 @@ function user_logged_in_as (name) {
     user = name;
     $("#user_non").fadeOut();
     $("#user_hello_name").text(name);
-    $("#user_hello").fadeIn();
+    setTimeout('$("#user_hello").fadeIn()', 500);
 }
 function user_login_failed_tidyup () {
     $("#user_login_failed").fadeOut();
-    $("#user_non").fadeIn();
 }
 function the_user_registration_form () {
     $("#user_non").fadeOut();
-    $("#cancel_usering_button").fadeIn();
     $("#user_registration_form").fadeIn();
+    setTimeout('$("#cancel_usering_button").fadeIn();', 500);
 }
 function user_registration_form_submit () {
     $("#user_registration_form").addClass("thinking");

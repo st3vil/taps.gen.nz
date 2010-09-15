@@ -58,7 +58,7 @@
    <p>Please go and get the secret code we emailed you and enter it here:</p>
    <input name="secret_code" id="secret_code" onkeydown="if (event.keyCode == 13) user_registration_verify_code()">
    <input type="hidden" name="verify_username" id="verify_username">
-   <p style="display:none" class="angry" id="verify_failed_words">Failed! Did you copy it out right? Try again? <span class="link" onclick="close_regverify_open_recover_password();">Recover your password</span>?<p>
+   <p style="display:none" class="angry" id="verify_failed_words">Failed! Did you copy it out right? Try again? <span class="link" onclick="close_regverify_open_recover_password();">Recover your password</span>?</p>
    <span id="secret_code_submit" class="link" onclick="user_registration_verify_code();">verify</span>
   </span>
 

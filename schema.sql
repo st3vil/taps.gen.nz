@@ -13,4 +13,10 @@ CREATE TABLE tap_details (
     nozzled bool
 );
 
+CREATE TABLE people (
+    username text unique,
+    password text,
+    email text,
+    registered timestamptz
+);
 

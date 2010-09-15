@@ -5,6 +5,7 @@ var ajax_busy = 0;
 var ajax_too_soon = 0;
 var oldzoom = 18;
 var showing_taps = 1;
+var user;
 function initialise() {
     var latlng = new google.maps.LatLng(-41.31532674688257, 174.78381760978698);
     map = new google.maps.Map(
@@ -29,6 +30,131 @@ function initialise() {
             if (oldzoom != newzoom) {
                 ui_for_zoomlevel();
             }
+        }
+    );
+
+    check_login();
+}
+
+function check_login() {
+    $.getJSON(
+        server + 'check_login',
+        {},
+        function (result) {
+            if (result.logged_in) {
+                user_logged_in_as(result.logged_in);
+            }
+        }
+    );
+}
+function the_user_login_form () {
+    $("#user_non").fadeOut();
+    $("#cancel_usering_button").fadeIn();
+    $("#user_login_form").fadeIn();
+}
+function user_login_form_submit () {
+    $("#user_login_form").addClass("thinking");
+    var name = $("#login_name").val();
+    var password = $("#login_password").val();
+    $.getJSON(
+        server + 'login',
+        { user: name,
+          password: password },
+        function (result) {
+            cancel_usering();
+            if (result.error) {
+                $("#user_login_failed").fadeIn();
+                setTimeout("user_login_failed_tidyup()", 3000);
+            }
+            else {
+                user_logged_in_as(name);
+            }
+        }
+    );
+}
+function user_logged_in_as (name) {
+    user = name;
+    $("#user_non").fadeOut();
+    $("#user_hello_name").text(name);
+    $("#user_hello").fadeIn();
+}
+function user_login_failed_tidyup () {
+    $("#user_login_failed").fadeOut();
+    $("#user_non").fadeIn();
+}
+function the_user_registration_form () {
+    $("#user_non").fadeOut();
+    $("#cancel_usering_button").fadeIn();
+    $("#user_registration_form").fadeIn();
+}
+function user_registration_form_submit () {
+    $("#user_registration_form").addClass("thinking");
+    $("#user_register_form_errors").text("").fadeOut();
+    var name = $("#register_name").val();
+    var password = $("#register_password").val();
+    var password2 = $("#register_password2").val();
+    var email = $("#register_email").val();
+    $.getJSON(
+        server + 'register',
+        { name: name,
+          password: password,
+          password2: password2,
+          email: email },
+        function (result) {
+            if (result.error) {
+                $("#user_register_form_errors").text(result.error).fadeIn();
+            }
+            else {
+                $("#user_registration_form").fadeOut().removeClass("thinking")
+                $("#user_registration_submat").fadeIn();
+                $("#verify_username").val(name);
+            }
+        }
+    );
+}
+function user_registration_verify_code () {
+    var code = $("#secret_code").val();
+    var name = $("#verify_username").val();
+    $.getJSON(
+        server + 'verify',
+        { code: code,
+          name: name,
+          gimme: "json"},
+        function (result) {
+            if (result.error) {
+                $("#verify_failed_words").fadeIn();
+            }
+            else {
+                cancel_usering();
+                user_logged_in_as(name);
+            }
+        }
+    );
+}
+function close_regverify_open_recover_password () {
+    cancel_usering("almost");
+    user_recover_password();
+}
+function cancel_usering (almost) {
+    $("#user_login_form").fadeOut().removeClass("thinking")
+    $("#user_registration_form").fadeOut().removeClass("thinking")
+    $("#user_registration_submat").fadeOut();
+    $("#verify_failed_words").fadeOut();
+    $("#user_register_form_errors").text("").fadeOut();
+    if (!almost) {
+        $("#cancel_usering_button").fadeOut();
+        $("#user_non").fadeIn();
+    }
+}
+function user_logout () {
+    $.getJSON(
+        server + 'logout',
+        {},
+        function (result) {
+            $("#user_hello").fadeOut();
+            $("#user_hello_name").text("you");
+            $("#user_non").fadeIn();
+            user = null;
         }
     );
 }
@@ -421,7 +547,7 @@ function refresh_taps() {
 }
 // }}}
 
-// {{{ markering
+// {{{ markeringzo
 function place_tap(tap) {
     tap.marker = new google.maps.Marker({
         position: new google.maps.LatLng(tap.lat, tap.lng),

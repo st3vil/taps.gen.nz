@@ -16,9 +16,58 @@
    <span id="create_tap_not">Zoom in closer...</span>
    <input id="create_tap_button" type="button" value="Create" onclick="create_tap();" style="display:none">
    <input id="cancel_create_tap_button" type="button" value="Cancel" onclick="stop_creating_tap();" style="display:none">
-   <span id="create_tap_howto" style="display:none">Now click where on the map...</span>
+   <span id="create_tap_howto" class="popoutey" style="display:none">Now click where on the map...</span>
  </div>
- <span id="not_showing_taps" style="display:none">Zoom in to see the taps.</span>
+ <span id="not_showing_taps" class="popoutey" style="display:none">Zoom in to see the taps</span>
+ <div id="menu_user">
+  <h5>The Users</h5>
+
+  <span id="user_non">
+   <span id="user_login" class="link" onclick="the_user_login_form();">login</span> or
+   <span id="user_register" class="link" onclick="the_user_registration_form();">register</span>
+  </span>
+  <input id="cancel_usering_button" type="button" value="Cancel" onclick="cancel_usering();" style="display:none">
+  <span id="user_login_failed" style="display:none;" class="angry">login failed! gah</span>
+
+  <span id="user_login_form" class="popoutey" style="display:none">
+   <form action="#" name="user_login_form">
+    <label for="login_name">Name</label>
+    <input name="login_name" id="login_name">
+    <label for="login_password">Password</label>
+    <input name="login_password" id="login_password" type="password" onkeydown="if (event.keyCode == 13) user_login_form_submit();">
+    <span id="user_login_form_submit" class="link" onclick="user_login_form_submit();">login</span>
+   </form>
+  </span>
+
+  <span id="user_registration_form" class="popoutey" style="display:none">
+   <form action="#" name="user_registration_form">
+    <label for="register_name">Name</label>
+    <input name="register_name" id="register_name">
+    <label for="register_password">Password</label><br/>
+    <input name="register_password" id="register_password" type="password" style="width: 40%">
+    <input name="register_password2" id="register_password2" type="password" style="width: 40%">
+    <label for="register_email">EMail</label>
+    <input name="register_email" id="register_email" onkeydown="if (event.keyCode == 13) user_registration_form_submit()">
+    <span id="user_register_form_submit" class="link" onclick="user_registration_form_submit();">register</span>
+    <span id="user_register_form_errors" class="angry" style="display:none"></span>
+   </form>
+  </span>
+
+  <span id="user_registration_submat" class="popoutey" style="display:none">
+   <h4>Thank you.</h4>
+   <p>Please go and get the secret code we emailed you and enter it here:</p>
+   <input name="secret_code" id="secret_code" onkeydown="if (event.keyCode == 13) user_registration_verify_code()">
+   <input type="hidden" name="verify_username" id="verify_username">
+   <p style="display:none" class="angry" id="verify_failed_words">Failed! Did you copy it out right? Try again? <span class="link" onclick="close_regverify_open_recover_password();">Recover your password</span>?<p>
+   <span id="secret_code_submit" class="link" onclick="user_registration_verify_code();">verify</span>
+  </span>
+
+  <span id="user_hello" style="display:none">
+   Hello <span id="user_hello_name">you</span>!<br/>
+   <span id="user_logout" onclick="user_logout();" class="link">logout</span>
+  </span>
+
+ </div>
 </div>
 <div id="map_canvas" style="width:100%; height:100%"></div>
 </body>

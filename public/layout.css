@@ -30,7 +30,7 @@ label {
     font-size: -1pt;
     font-family: monospace;
 }
-#menu_create {
+#menu_create, #menu_user {
     border: 1px dotted black;
     height: 33%;
     padding: 3px;
@@ -40,10 +40,12 @@ label {
     width: 100%;
     margin: 1px;
 }
-#menu_create h5 { margin: 2px; }
-#create_tap_howto, #not_showing_taps {
+.angry { color:red; font-weight:bold }
+#menu h5, h4 { margin: 2px; }
+.popoutey {
     position: absolute;
     right: 7em;
     background: white;
     padding: 1em;
+    bottom: 4em;
 }

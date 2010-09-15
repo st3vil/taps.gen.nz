@@ -1,7 +1,7 @@
 #!/usr/bin/env perl
 
 use Mojolicious::Lite;
-
+use Crypt::Password;
 use DBI;
 my $dbh = DBI->connect('dbi:Pg:dbname=taps') or die $!;
 my $select_taps_in_bounds = $dbh->prepare(q {
@@ -49,6 +49,108 @@ get '/tap_details' => sub {
     my $self = shift;
     my $tap = read_tap_details($self->param("tid"));
     $self->render_json($tap);
+};
+
+get '/login' => sub {
+    my $self = shift;
+    my $user = $self->param('user');
+    my $pass = $self->param('password');
+    my ($hashed, $registered) = $dbh->selectrow_array(
+        "SELECT password, registered FROM people
+        WHERE username = ?", undef, $user
+    );
+    unless ($hashed) {
+        return $self->render_json({ error => "no such user" });
+    }
+    unless ($registered) {
+        return $self->render_json({ error => "unverified"});
+    }
+    unless (password($hashed)->check($pass)) {
+        return $self->render_json({ error => "bad password" });
+    }
+    $self->session(user => $user);
+    return $self->render_json({ okay => ":D" });
+};
+
+get '/register' => sub {
+    my $self = shift;
+    my $name = $self->param("name");
+    my $password = $self->param("password");
+    my $password2 = $self->param("password2");
+    my $email = $self->param("email");
+    my $error;
+    if ($name !~ /^[\w\d]+$/) {
+        $error = "name: alphanumerals only";
+    }
+    elsif (!$password || !$password2) {
+        $error = "password!";
+    }
+    elsif ($password ne $password2) {
+        $error = "passwords dont match";
+    }
+    elsif ($email !~ /^.+@.+\..+$/) {
+        $error = "invalid email";
+    }
+    unless ($error) {
+        $dbh->do("INSERT INTO people (username, password, email)
+            VALUES (?, ?, ?)", undef,
+            $name, password($password), $email
+        );
+    }
+    if ($error) {
+        return $self->render_json({error => $error});
+    }
+    return $self->render_json({yeah => $@});
+};
+
+get '/verify' => sub {
+    my $self = shift;
+    my $name = $self->param("name");
+    my $code = $self->param("code");
+    my $gimme = $self->param("gimme");
+    my $hashed = $dbh->selectrow_array(
+        "SELECT password FROM people
+        WHERE username = ?", undef, $name
+    );
+    my ($expected) = $hashed =~ /(.{7})$/;
+    if ($code eq $expected) {
+        $dbh->do("UPDATE people SET registered = now()
+            WHERE username = ?", undef, $name);
+        $self->session(user => $name);
+        return $self->render_json({ okay => ":D" });
+    }
+    else {
+        return $self->render_json({ error => "invalid" });
+    }
+};
+
+get '/check_login' => sub {
+    my $self = shift;
+    my $name = $self->session("user");
+    return $self->render_json(
+        $name ? { logged_in => $name } : { not => ":O" }
+    );
+};
+
+get '/logout' => sub {
+    my $self = shift;
+    $self->session(expires => 1);
+    return $self->render_json({ okay => ":(" });
+};
+
+under sub {
+    my $self = shift;
+    $self->app->log->debug("session name: ". $self->session("name"));
+    unless ($self->session("name")) {
+        return 0;
+    }
+    return 1;
+};
+
+get '/cookietest' => sub {
+    my $self = shift;
+
+    $self->render_text("hello");
 };
 
 get '/edit_tap_details' => sub {

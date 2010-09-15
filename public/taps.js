@@ -21,7 +21,7 @@ function initialise() {
     ui_for_zoomlevel("init");
     
     google.maps.event.addListener(
-        map, 'bounds_changed', function () {
+        map, 'idle', function () {
             var newzoom = map.getZoom();
             if (newzoom <= oldzoom) {
                 refresh_taps();

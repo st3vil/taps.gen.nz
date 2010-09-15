@@ -78,7 +78,6 @@ function dont_show_create_tap_button () {
 }
 
 function lock_ui() {
-    console.log("locking ui");
     $("#create_tap_button").attr("disabled", "disabled");
 }
 
@@ -422,6 +421,7 @@ function refresh_taps() {
 }
 // }}}
 
+// {{{ markering
 function place_tap(tap) {
     tap.marker = new google.maps.Marker({
         position: new google.maps.LatLng(tap.lat, tap.lng),
@@ -458,4 +458,5 @@ function unplace_tap(tapish) {
     tap.marker.setMap();
     delete tapset[tid];
 }
+/// }}}
 

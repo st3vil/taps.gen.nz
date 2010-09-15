@@ -145,12 +145,6 @@ under sub {
     return 0; # does Not Found html... ideally it would be a 401 and no data
 };
 
-get '/cookietest' => sub {
-    my $self = shift;
-
-    $self->render_text("hello");
-};
-
 get '/edit_tap_details' => sub {
     my $self = shift;
     my $tap = write_tap_details(

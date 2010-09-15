@@ -80,6 +80,13 @@ function user_logged_in_as (name) {
     $("#user_non").fadeOut();
     $("#user_hello_name").text(name);
     setTimeout('$("#user_hello").fadeIn()', 500);
+    $("#menu_create").fadeIn();
+    if (map.getZoom >= zoom_thresh_createtaps) {
+        show_create_tap_button();
+    }
+    else {
+        dont_show_create_tap_button();
+    }
 }
 function user_login_failed_tidyup () {
     $("#user_login_failed").fadeOut();
@@ -157,6 +164,7 @@ function user_logout () {
             $("#user_hello_name").text("you");
             $("#user_non").fadeIn();
             user = null;
+            $("#menu_create").fadeOut();
         }
     );
 }
@@ -528,18 +536,13 @@ function refresh_taps() {
         { bounds: bounds_string },
         function (newtapset) {
             $.each(tapset, function(tid, tap) {
-                if (tid in newtapset) {
-                }
-                else {
+                if (!newtapset[tid]) {
                     console.log("Tap "+tid+" goes away");
                     unplace_tap(tid);
                 }
             });
             $.each(newtapset, function(tid, newtap) {
-                if (tid in tapset) {
-                    // already there
-                }
-                else {
+                if (!tapset[tid]) {
                     var marker = place_tap(newtap);
                 }
             });

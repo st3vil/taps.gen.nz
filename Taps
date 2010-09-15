@@ -140,11 +140,9 @@ get '/logout' => sub {
 
 under sub {
     my $self = shift;
-    $self->app->log->debug("session name: ". $self->session("name"));
-    unless ($self->session("name")) {
-        return 0;
-    }
-    return 1;
+
+    return 1 if $self->session("user");
+    return 0; # does Not Found html... ideally it would be a 401 and no data
 };
 
 get '/cookietest' => sub {

@@ -11,7 +11,7 @@
 <body onload="initialise()">
 <%== content %>
 <div id="menu">
- <div id="menu_create">
+ <div id="menu_create" style="display:none">
   <h5>Create Taps</h5>
    <span id="create_tap_not">Zoom in closer...</span>
    <input id="create_tap_button" type="button" value="Create" onclick="create_tap();" style="display:none">

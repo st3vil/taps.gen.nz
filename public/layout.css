@@ -1,11 +1,13 @@
   html { height: 100% }
   body { height: 100%; margin: 0px; padding: 0px }
-  #map_canvas { height: 100%; position:absolute; top:5em; }
+  #map_canvas { height: 100%;}
 #menu {
-background-color: black;
-position: absolute; top: 0em;
-height: 5em; width: 100%;
-background: url('http://www.sonofthesouth.net/union-generals/sioux-indians/pictures/buffalo-head-dress.jpg');
+z-index: 15000;
+background-color: gray;
+position: absolute;
+right: 0px;
+bottom: 20px;
+height: 17em; width: 7em;
 }
 .link { color: blue; text-decoration: underline; font-size: small }
 #edit_tap_blurb {
@@ -23,4 +25,25 @@ label {
     font-size: small;
     color: gray;
 }
-
+#menu {
+    padding: 1px;
+    font-size: -1pt;
+    font-family: monospace;
+}
+#menu_create {
+    border: 1px dotted black;
+    height: 33%;
+    padding: 3px;
+    margin: 1px;
+}
+#menu_create input {
+    width: 100%;
+    margin: 1px;
+}
+#menu_create h5 { margin: 2px; }
+#create_tap_howto, #not_showing_taps {
+    position: absolute;
+    right: 7em;
+    background: white;
+    padding: 1em;
+}

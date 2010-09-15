@@ -12,7 +12,9 @@ function initialise() {
         {
             zoom: oldzoom,
             center: latlng,
-            mapTypeId: google.maps.MapTypeId.HYBRID
+            mapTypeId: google.maps.MapTypeId.HYBRID,
+            disableDefaultUI: true,
+            navigationControl: true
         }
     );
 
@@ -32,18 +34,20 @@ function initialise() {
 }
 
 // {{{ ui re. zoom level
+var zoom_thresh_showtaps = 17;
+var zoom_thresh_createtaps = 19;
 function ui_for_zoomlevel (init) {
     var newzoom = map.getZoom();
-    if ((init || oldzoom < 18) && newzoom >= 18) {
+    if ((init || oldzoom < zoom_thresh_showtaps) && newzoom >= zoom_thresh_showtaps) {
         show_taps();
     }
-    else if ((init || oldzoom < 19) && newzoom >= 19) {
+    else if ((init || oldzoom < zoom_thresh_createtaps) && newzoom >= zoom_thresh_createtaps) {
         show_create_tap_button();
     }
-    else if ((init || oldzoom >= 18) && newzoom < 18) {
+    else if ((init || oldzoom >= zoom_thresh_showtaps) && newzoom < zoom_thresh_showtaps) {
         dont_show_taps();
     }
-    else if ((init || oldzoom >= 19) && newzoom < 19) {
+    else if ((init || oldzoom >= zoom_thresh_createtaps) && newzoom < zoom_thresh_createtaps) {
         dont_show_create_tap_button();
     }
     oldzoom = newzoom;

@@ -27,7 +27,7 @@
    <span id="user_register" class="link" onclick="the_user_registration_form();">register</span>
   </span>
   <input id="cancel_usering_button" type="button" value="Cancel" onclick="cancel_usering();" style="display:none">
-  <span id="user_login_failed" style="display:none;" class="angry">login failed! gah</span>
+  <span id="user_login_failed" style="display:none;" class="angry popoutey">login failed! gah</span>
 
   <span id="user_login_form" class="popoutey" style="display:none">
    <form action="#" name="user_login_form">

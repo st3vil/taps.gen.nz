@@ -36,6 +36,7 @@ function initialise() {
     check_login();
 }
 
+// {{{ users
 function check_login() {
     $.getJSON(
         server + 'check_login',
@@ -49,7 +50,7 @@ function check_login() {
 }
 function the_user_login_form () {
     $("#user_non").fadeOut();
-    $("#cancel_usering_button").fadeIn();
+    setTimeout('$("#cancel_usering_button").fadeIn();', 500);
     $("#user_login_form").fadeIn();
 }
 function user_login_form_submit () {
@@ -143,7 +144,7 @@ function cancel_usering (almost) {
     $("#user_register_form_errors").text("").fadeOut();
     if (!almost) {
         $("#cancel_usering_button").fadeOut();
-        $("#user_non").fadeIn();
+        setTimeout('$("#user_non").fadeIn()', 500);
     }
 }
 function user_logout () {
@@ -158,6 +159,7 @@ function user_logout () {
         }
     );
 }
+// }}}
 
 // {{{ ui re. zoom level
 var zoom_thresh_showtaps = 17;
@@ -194,13 +196,13 @@ function dont_show_taps () {
 }
 
 function show_create_tap_button () {
-    $("#create_tap_button").fadeIn();
     $("#create_tap_not").fadeOut();
+    setTimeout('$("#create_tap_button").fadeIn();', 500);
 }
 
 function dont_show_create_tap_button () {
     $("#create_tap_button").fadeOut();
-    $("#create_tap_not").fadeIn();
+    setTimeout('$("#create_tap_not").fadeIn();', 500);
 }
 
 function lock_ui() {
@@ -547,7 +549,7 @@ function refresh_taps() {
 }
 // }}}
 
-// {{{ markeringzo
+// {{{ markering
 function place_tap(tap) {
     tap.marker = new google.maps.Marker({
         position: new google.maps.LatLng(tap.lat, tap.lng),

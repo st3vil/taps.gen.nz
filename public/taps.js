@@ -188,12 +188,12 @@ function edit_tap(tap) {
     if (tap.details.no_handle) {
         content += ' checked="checked"';
     }
-    content += '></input><label for="no_handle">No handle</label><br/>';
+    content += '><label for="no_handle">No handle</label><br/>';
     content += '<input type="checkbox" name="nozzled" id="edit_tap_nozzled"';
     if (tap.details.nozzled) {
         content += ' checked="checked"';
     }
-    content += '></input><label for="nozzled">Nozzled</label><br/>' +
+    content += '><label for="nozzled">Nozzled</label><br/>' +
 '<span class="link" id="save_tap_button" onclick="edit_tap_submit();">save</span> ';
     if (tap.tid) {
         content += '<span class="link" id="delete_tap_button" onclick="edit_tap_delete();">delete</span> ' +
@@ -205,7 +205,7 @@ function edit_tap(tap) {
     bubble.open(tap, content,
         function () {
             if (!tap.tid) {
-                unplace(tap);
+                unplace_tap(tap);
             }
             unlock_ui();
         }
@@ -333,6 +333,7 @@ function move_tap_save (tap) {
     }
     unlock_ui();
     $("#move_tap_dial").addClass("thinking");
+    tap.marker.setDraggable(false);
     var newplace = tap.marker.getPosition();
     $.getJSON(
         server + 'move_tap',
@@ -350,6 +351,7 @@ function move_tap_cancel (tap) {
         tap = bubble.current_thing;
     }
     unlock_ui();
+    tap.marker.setDraggable(false);
     tap.marker.setPosition(tap.original_position);
     tap_details(tap);
 }

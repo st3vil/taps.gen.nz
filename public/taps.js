@@ -1,9 +1,9 @@
 var map;
 var tapset = {};
-var server = "http://taps.gen.nz:3000/";
+var server = "http://taps.gen.nz/";
 var ajax_busy = 0;
 var ajax_too_soon = 0;
-var oldzoom = 18;
+var oldzoom = 17;
 var showing_taps = 1;
 var user;
 function initialise() {

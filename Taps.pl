@@ -111,7 +111,7 @@ get '/register' => sub {
             }
         }
         else {
-            my ($code) = $hashed =~ /(.{7})$/;
+            my $code = hashed_to_secretcode($hashed);
             my $gmail_error = send_email($email, "verification", $code, $name);
             if ($gmail_error) {
                 $dbh->do("ABORT");
@@ -143,7 +143,7 @@ get '/verify' => sub {
         "SELECT password FROM people
         WHERE username = ?", undef, $name
     );
-    my ($expected) = $hashed =~ /(.{7})$/;
+    my $expected = hashed_to_secretcode($hashed);
 
     if ($code eq $expected) {
         $dbh->do("UPDATE people SET registered = now()
@@ -322,6 +322,12 @@ EOEMAIL
     }
 
     return undef
+}
+
+sub hashed_to_secretcode {
+    my $hashed = shift;
+    $hashed =~ s/[^\w]//m;
+    return substr $hashed, -7;
 }
 
 app->start;

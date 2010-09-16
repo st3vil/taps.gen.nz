@@ -34,6 +34,8 @@ my $select_tap_details = $dbh->prepare(q {
 
 get '/' => 'index';
 
+get '/aboutus' => 'aboutus';
+
 get '/get_taps_in_bounds' => sub {
     my $self = shift;
     my ($ne_lat, $ne_lng) = unpack_uri_latlng($self->param("ne_bound"));

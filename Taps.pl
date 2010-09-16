@@ -134,6 +134,22 @@ get '/register' => sub {
     return $self->render_json({yeah => $@});
 };
 
+get '/recover' => sub {
+    my $self = shift;
+    my $email = $self->param("email");
+    my ($name, $hashed) = $dbh->selectrow_array(
+        "SELECT username, password FROM people
+        WHERE email = ?", undef, $email
+    );
+    unless ($hashed) {
+        return $self->render_json({error => "email not found"});
+    }
+    my $code = hashed_to_secretcode($hashed);
+    my $email_error = send_email($email, "recovery", $code);
+    $self->app->log->error("recover email error: $email_error") if $email_error;
+    $self->render_json({done => $name});
+};
+
 get '/verify' => sub {
     my $self = shift;
     my $name = $self->param("name");
@@ -143,6 +159,9 @@ get '/verify' => sub {
         "SELECT password FROM people
         WHERE username = ?", undef, $name
     );
+    unless ($hashed) {
+        $self->render_json({ error => "invalid" });
+    }
     my $expected = hashed_to_secretcode($hashed);
 
     if ($code eq $expected) {
@@ -186,7 +205,28 @@ under sub {
     my $self = shift;
 
     return 1 if $self->session("user");
-    return 0; # does Not Found html... ideally it would be a 401 and no data
+    return 0; # todo does Not Found html... ideally it would be a 401 and no data
+};
+
+get '/changepass' => sub {
+    my $self = shift;
+    my $password = $self->param("password");
+    my $password2 = $self->param("password2");
+    my $response;
+    if (!$password || !$password2) {
+        $response = "fill out the form!";
+    }
+    elsif ($password ne $password2) {
+        $response = "passwords dont match";
+    }
+    unless ($response) {
+        my $name = $self->session("user");
+        my $hashed = password($password);
+        $dbh->do("UPDATE people SET password = ? WHERE username = ?",
+            undef, $hashed, $name);
+        $response = "password changed!"
+    }
+    $self->render_json($response);
 };
 
 get '/edit_tap_details' => sub {
@@ -288,8 +328,9 @@ sub send_email {
         my ($code, $name) = @_;
         my $uri = new URI($site_url);
         $uri->query_form(name => $name, code => $code);
+        $subject = "Welcome";
         $message = <<"EOEMAIL";
-Hello $name,
+Kia Ora $name,
 
 Welcome to taps.gen.nz! Your verification code is: $code
 
@@ -299,7 +340,18 @@ You can independently click here:
 Thank you for your participation!
 Steve.
 EOEMAIL
-        $subject = "Welcome to taps.gen.nz";
+    }
+    elsif ($order eq "recovery") {
+        my ($code) = @_;
+        $subject = "Password Recovery";
+        $message = <<"EOEMAIL";
+Hello Mr/Mrs Forgetful!
+
+Your recovery code is: $code
+
+Thanks for trying.
+Steve.
+EOEMAIL
     }
     else {
         app->log->error("unhandled call to send_email: @_");
@@ -309,7 +361,7 @@ EOEMAIL
         header => [
             From => $email_from,
             To => $email_to,
-            Subject => $subject,
+            Subject => "[taps.gen.nz] $subject",
         ],
         body => $message,
     );

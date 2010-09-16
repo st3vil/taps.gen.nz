@@ -49,9 +49,12 @@ function check_login() {
     );
 }
 function the_user_login_form () {
+    start_usering();
+    $("#user_login_form").fadeIn();
+}
+function start_usering () {
     $("#user_non").fadeOut();
     setTimeout('$("#cancel_usering_button").fadeIn();', 500);
-    $("#user_login_form").fadeIn();
 }
 function user_login_form_submit () {
     $("#user_login_form").addClass("thinking");
@@ -65,8 +68,7 @@ function user_login_form_submit () {
             cancel_usering("almost");
             if (result.error) {
                 cancel_usering();
-                $("#user_login_failed").fadeIn();
-                setTimeout("user_login_failed_tidyup()", 3000);
+                angry_popout("login failed! gah");
             }
             else {
                 $("#cancel_usering_button").fadeOut();
@@ -74,6 +76,14 @@ function user_login_form_submit () {
             }
         }
     );
+}
+function angry_popout (text) {
+    $("#the_angry_popout").text(text).fadeIn();
+    setTimeout("angry_popout_tidyup()", 3000);
+}
+function angry_popout_tidyup() {
+    $("#the_angry_popout").fadeOut();
+    setTimeout('$("#the_angry_popout").text("");', 500);
 }
 function user_logged_in_as (name) {
     user = name;
@@ -92,9 +102,8 @@ function user_login_failed_tidyup () {
     $("#user_login_failed").fadeOut();
 }
 function the_user_registration_form () {
-    $("#user_non").fadeOut();
+    start_usering();
     $("#user_registration_form").fadeIn();
-    setTimeout('$("#cancel_usering_button").fadeIn();', 500);
 }
 function user_registration_form_submit () {
     $("#user_registration_form").addClass("thinking");
@@ -148,12 +157,25 @@ function close_regverify_open_recover_password () {
 function cancel_usering (almost) {
     $("#user_login_form").fadeOut().removeClass("thinking")
     $("#user_registration_form").fadeOut().removeClass("thinking")
-    $("#user_registration_submat").fadeOut();
+    $("#user_registration_submat").fadeOut();  
     $("#verify_failed_words").fadeOut();
     $("#user_register_form_errors").text("").fadeOut();
+    
+    $("#user_recovery").fadeOut().removeClass("thinking");
+    $("#user_recovery_form").fadeOut();
+    $("#user_recovery_secretform").fadeOut();
+    $("#user_recovery_success").fadeOut();
+
+    $("#user_passwordchange").fadeOut().removeClass("thinking");
+
     if (!almost) {
         $("#cancel_usering_button").fadeOut();
-        setTimeout('$("#user_non").fadeIn()', 500);
+        if (user) {
+           setTimeout('$("#user_hello").fadeIn()', 500);
+        }
+        else {
+           setTimeout('$("#user_non").fadeIn()', 500);
+        }
     }
 }
 function user_logout () {
@@ -166,6 +188,79 @@ function user_logout () {
             $("#user_non").fadeIn();
             user = null;
             $("#menu_create").fadeOut();
+        }
+    );
+}
+function user_login_recovery () {
+    cancel_usering("almost");
+    start_usering();
+    $("#user_recovery").fadeIn();
+    $("#user_recovery_form").fadeIn();
+    $("#recovery_email").val("");
+}
+var user_recovery_name;
+function user_login_recovery_submit () {
+    $("#user_recovery").addClass("thinking");
+    var email = $("#recovery_email").val();
+    $.getJSON(
+        server + 'recover',
+        { email: email },
+        function (res) {
+            if (res.error) {
+                cancel_usering();
+                angry_popout(res.error);
+            }
+            else {
+                user_recovery_name = res.done;
+                $("#user_recovery_form").fadeOut();
+                setTimeout('$("#user_recovery").removeClass("thinking");'
+                    +'$("#user_recovery_secretform").fadeIn();', 500);
+            }
+        }
+    );
+}
+function user_login_recovery_verify () {
+    $("#user_recovery").addClass("thinking");
+    var code = $("#recovery_secret").val();
+    $.getJSON(
+        server + 'verify',
+        { name: user_recovery_name,
+          code: code,
+          gimme: "json" },
+        function (res) {
+            if (res.error) {
+                cancel_usering();
+                angry_popout("INCORRECT");
+            }
+            else {
+                user_logged_in_as(user_recovery_name);
+                $("#user_recovery_secretform").fadeOut();
+                setTimeout('$("#user_recovery").removeClass("thinking");'
+                    +'$("#user_recovery_success").fadeIn();', 500);
+                setTimeout('user_login_recovery_alldone();', 5000);
+            }
+        }
+    );
+}
+function user_login_recovery_alldone () {
+    cancel_usering();
+    user_password_change();
+}
+function user_password_change() {
+    start_usering();
+    $("#user_passwordchange").fadeIn();
+}
+function user_password_change_submit () {
+    $("#user_passwordchange").addClass("thinking");
+    var password = $("#change_password").val();
+    var password2 = $("#change_password2").val();
+    $.getJSON(
+        server + 'changepass',
+        { password: password,
+          password2: password2 },
+        function (res) {
+            cancel_usering();
+            angry_popout(res);
         }
     );
 }

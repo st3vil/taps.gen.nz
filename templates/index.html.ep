@@ -27,7 +27,7 @@
    <span id="user_register" class="link" onclick="the_user_registration_form();">register</span>
   </span>
   <input id="cancel_usering_button" type="button" value="Cancel" onclick="cancel_usering();" style="display:none">
-  <span id="user_login_failed" style="display:none;" class="angry popoutey">login failed! gah</span>
+  <span id="the_angry_popout" style="display:none;" class="angry popoutey"></span>
 
   <span id="user_login_form" class="popoutey" style="display:none">
    <form action="#" name="user_login_form">
@@ -36,6 +36,7 @@
     <label for="login_password">Password</label>
     <input name="login_password" id="login_password" type="password" onkeydown="if (event.keyCode == 13) user_login_form_submit();">
     <span id="user_login_form_submit" class="link" onclick="user_login_form_submit();">login</span>
+    <span id="user_login_form_recover" class="link" style="float:right" onclick="user_login_recovery();">recover</span>
    </form>
   </span>
 
@@ -64,10 +65,39 @@
 
   <span id="user_hello" style="display:none">
    Hello <span id="user_hello_name">you</span>!<br/>
-   <span id="user_logout" onclick="user_logout();" class="link">logout</span>
+   <span id="user_logout" onclick="user_logout();" class="link">logout</span><br/>
+   <span id="user_password_change" onclick="user_password_change();" class="link">chng pw</span>
+  </span>
+
+  <span id="user_recovery" class="popoutey" style="display:none">
+   <h4>Password Recovery</h4>
+   <span id="user_recovery_form">
+    <label for="recovery_email">Email Address</label>
+    <input name="recovery_email" id="recovery_email" onkeydown="if (event.keyCode == 13) user_login_recovery_submit();">
+    <span id="recovery_submit" class="link" onclick="user_login_recovery_submit();">submit</span>
+   </span>
+   <span id="user_recovery_secretform" style="display:none">
+    <p>We've emailed you a secret code.</p>
+    <label for="recovery_secret">Secret Code</label>
+    <input id="recovery_secret" name="recovery_secret" onkeydown="if (event.keyCode == 13) user_login_recovery_verify();">
+    <span id="recovery_secret_verify" class="link" onclick="user_login_recovery_verify();">verify</span>
+   </span>
+   <span id="user_recovery_success" style="display:none">
+    <p>Recovery complete; you are now logged in.<p>
+    <p>Taking you to change your password...</p>
+   </span>
+  </span>
+
+  <span id="user_passwordchange" class="popoutey" style="display:none">
+   <h4>Password Change</h4>
+    <label for="change_password">New Password</label><br/>
+    <input name="change_password" id="change_password" type="password" style="width: 6em">
+    <input name="change_password2" id="change_password2" type="password" style="width: 6em" onkeydown="if (event.keyCode == 13) user_password_change_submit();">
+    <span id="user_passwordchange_submit" class="link" onclick="user_password_change_submit();">submit</span>
   </span>
 
  </div>
+ <a href="/aboutus" style="position:absolute;bottom:0px;">About Us</a>
 </div>
 <div id="map_canvas" style="width:100%; height:100%"></div>
 </body>

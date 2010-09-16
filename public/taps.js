@@ -518,8 +518,6 @@ function edit_tap_submit(tap) {
     tap.details.no_handle = $("#edit_tap_no_handle:checked").length;
     tap.details.nozzled = $("#edit_tap_nozzled:checked").length;
 
-    console.log("submit tap", tap.details.no_handle, tap.details.nozzled, tap);
-   
     if (tap.tid) {
         $.getJSON(
             server + "edit_tap_details",
@@ -534,7 +532,6 @@ function edit_tap_submit(tap) {
         );
     }
     else {
-        console.log("new tap", tap);
         $.getJSON(
             server + "create_tap",
             { lat: tap.lat,
@@ -545,7 +542,6 @@ function edit_tap_submit(tap) {
             function (tapdetails) {
                 tap.details = tapdetails;
                 tap.tid = tap.details.tid;
-                console.log("created", tap);
                 tap_details(tap);
             }
         );
@@ -649,7 +645,7 @@ function refresh_taps() {
         { ne_bound: northEast.toUrlValue(),
           sw_bound: southWest.toUrlValue() },
         function (newtapset) {
-            if (showing_taps == 0) {
+            if (showing_taps == 0 || !newtapset) {
                 return;
             }
             $.each(tapset, function(tid, tap) {
@@ -662,7 +658,6 @@ function refresh_taps() {
                     var marker = place_tap(newtap);
                 }
             });
-            console.log("tapset:", tapset);
             busy = 0;
         }
     );
@@ -685,7 +680,6 @@ function place_tap(tap) {
         function (clickevent) { tap_details(tap); }
     );
 
-    console.log("Tap placed: ", tap);
     return tap;
 }
 
@@ -703,7 +697,6 @@ function unplace_tap(tapish) {
     if (tap.original_position) {
         return;
     }
-    console.log("Tap "+tid+" goes away");
     tap.marker.setMap();
     delete tapset[tid];
 }

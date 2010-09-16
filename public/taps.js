@@ -173,18 +173,28 @@ function user_logout () {
 // {{{ ui re. zoom level
 var zoom_thresh_showtaps = 17;
 var zoom_thresh_createtaps = 19;
+var zoom_showtaps;
+var zoom_createtaps;
 function ui_for_zoomlevel (init) {
     var newzoom = map.getZoom();
-    if ((init || oldzoom < zoom_thresh_showtaps) && newzoom >= zoom_thresh_showtaps) {
+    var zoom_showtaps_was = zoom_showtaps;
+    var zoom_createtaps_was = zoom_createtaps;
+    
+    zoom_showtaps = newzoom >= zoom_thresh_showtaps;
+    zoom_createtaps = newzoom >= zoom_thresh_createtaps;
+
+    if (zoom_showtaps && !zoom_showtaps_was) {
         show_taps();
     }
-    else if ((init || oldzoom < zoom_thresh_createtaps) && newzoom >= zoom_thresh_createtaps) {
-        show_create_tap_button();
-    }
-    else if ((init || oldzoom >= zoom_thresh_showtaps) && newzoom < zoom_thresh_showtaps) {
+    else if (!zoom_showtaps && (zoom_showtaps_was || zoom_showtaps_was == null)) {
         dont_show_taps();
     }
-    else if ((init || oldzoom >= zoom_thresh_createtaps) && newzoom < zoom_thresh_createtaps) {
+
+    if (zoom_createtaps && !zoom_createtaps_was) {
+        show_create_tap_button();
+    }
+    else if ((!zoom_createtaps || !user)
+             && (zoom_createtaps_was || zoom_createtaps_was == null)) {
         dont_show_create_tap_button();
     }
     oldzoom = newzoom;
@@ -199,12 +209,11 @@ function show_taps () {
 function dont_show_taps () {
     $("#not_showing_taps").fadeIn();
     showing_taps = 0;
-    $.each(tapset, function (tid, tap) {
-        unplace_tap(tap);
-    });
+    refresh_taps();
 }
 
 function show_create_tap_button () {
+    unlock_ui();
     $("#create_tap_not").fadeOut();
     setTimeout('$("#create_tap_button").fadeIn();', 500);
 }
@@ -356,6 +365,9 @@ function edit_tap(tap) {
 function edit_tap_cancel(tap) {
     unlock_ui();
     if (!tap) {
+    $.each(tapset, function (tid, tap) {
+        unplace_tap(tap);
+    });
         tap = bubble.current_thing;
     }
     if (tap.tid) {
@@ -509,11 +521,16 @@ function ajax_ready() {
     }
 }
 function refresh_taps() {
-    if (ajax_busy || showing_taps == 0) {
+    if (ajax_busy) {
+        return;
+    }
+    if (showing_taps == 0) {
+        $.each(tapset, function(tid, tap) {
+            unplace_tap(tid);
+        });
         return;
     }
     if (ajax_too_soon) {
-        console.log("refreshing taps later");
         refresh_taps_when_ajax_ready = 1;
         return;
     }
@@ -524,7 +541,6 @@ function refresh_taps() {
 
     var bounds = map.getBounds();
     if (!bounds) {
-        console.log("wtf: map.getBounds() returned undef");
         setTimeout("refresh_taps()", 500);
         return;
     }
@@ -535,9 +551,11 @@ function refresh_taps() {
         server + "get_taps_in_bounds",
         { bounds: bounds_string },
         function (newtapset) {
+            if (showing_taps == 0) {
+                return;
+            }
             $.each(tapset, function(tid, tap) {
                 if (!newtapset[tid]) {
-                    console.log("Tap "+tid+" goes away");
                     unplace_tap(tid);
                 }
             });
@@ -587,6 +605,7 @@ function unplace_tap(tapish) {
     if (tap.original_position) {
         return;
     }
+    console.log("Tap "+tid+" goes away");
     tap.marker.setMap();
     delete tapset[tid];
 }

@@ -77,8 +77,8 @@ function user_login_form_submit () {
 }
 function user_logged_in_as (name) {
     user = name;
-    $("#user_non").fadeOut();
     $("#user_hello_name").text(name);
+    $("#user_non").fadeOut();
     setTimeout('$("#user_hello").fadeIn()', 500);
     $("#menu_create").fadeIn();
     if (map.getZoom >= zoom_thresh_createtaps) {
@@ -111,6 +111,7 @@ function user_registration_form_submit () {
           email: email },
         function (result) {
             if (result.error) {
+                $("#user_registration_form").removeClass("thinking")
                 $("#user_register_form_errors").text(result.error).fadeIn();
             }
             else {
@@ -548,10 +549,10 @@ function refresh_taps() {
     }
     var northEast = bounds.getNorthEast();
     var southWest = bounds.getSouthWest();
-    var bounds_string = northEast.toUrlValue()+"\t"+southWest.toUrlValue();
     $.getJSON(
         server + "get_taps_in_bounds",
-        { bounds: bounds_string },
+        { ne_bound: northEast.toUrlValue(),
+          sw_bound: southWest.toUrlValue() },
         function (newtapset) {
             if (showing_taps == 0) {
                 return;

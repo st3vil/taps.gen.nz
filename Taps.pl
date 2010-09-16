@@ -2,7 +2,18 @@
 
 use Mojolicious::Lite;
 use Crypt::Password;
+use Email::Send;
+use Email::Send::Gmail;
+use Email::Simple::Creator;
+use YAML::Syck;
 use DBI;
+use URI;
+
+my $site_url = "http://taps.gen.nz:3000/";
+
+my $email_from = 'taps.gen.nz@gmail.com';
+my $email_sender = setup_email();
+
 my $dbh = DBI->connect('dbi:Pg:dbname=taps') or die $!;
 my $select_taps_in_bounds = $dbh->prepare(q {
     SELECT tid, lat, lng FROM tap_loc
@@ -25,23 +36,14 @@ get '/' => 'index';
 
 get '/get_taps_in_bounds' => sub {
     my $self = shift;
-    my $bounds = $self->param("bounds");
-    my ($ne_lat, $ne_lng, $sw_lat, $sw_lng) = $bounds =~ m{ \A
-        ( -?\d+\.?\d* ) ,
-        ( -?\d+\.?\d* ) \t
-        ( -?\d+\.?\d* ) ,
-        ( -?\d+\.?\d* )
-        \Z }xs;
-
-    $self->app->log->debug("Params: NE: $ne_lat, $ne_lng SW: $sw_lat, $sw_lng");
+    my ($ne_lat, $ne_lng) = unpack_uri_latlng($self->param("ne_bound"));
+    my ($sw_lat, $sw_lng) = unpack_uri_latlng($self->param("sw_bound"));
     
     $select_taps_in_bounds->execute(
         $ne_lat, $sw_lat,
         $ne_lng, $sw_lng
     );
     my $taps = $select_taps_in_bounds->fetchall_hashref("tid");
-    $self->app->log->debug("taps:\n".join("\n",
-        map { join("\t", values %$_) } values %$taps));
     $self->render_json($taps);
 };
 
@@ -92,10 +94,39 @@ get '/register' => sub {
         $error = "invalid email";
     }
     unless ($error) {
-        $dbh->do("INSERT INTO people (username, password, email)
-            VALUES (?, ?, ?)", undef,
-            $name, password($password), $email
+        $dbh->do("BEGIN");
+        my $hashed = password($password);
+        my $rc = $dbh->do("INSERT INTO people (username, password, email)
+            VALUES (?, ?, ?)", undef,          $name,    $hashed,  $email
         );
+        if (!$rc) {
+            my $db_error = $dbh->errstr;
+            $dbh->do("ABORT");
+            if ($db_error eq 'ERROR:  duplicate key value violates unique constraint "people_username_key"') {
+                $error = "username already taken";
+            }
+            else {
+                $error = "something weird";
+                $self->app->log->error("unhandled db error on user insert: $db_error");
+            }
+        }
+        else {
+            my ($code) = $hashed =~ /(.{7})$/;
+            my $gmail_error = send_email($email, "verification", $code, $name);
+            if ($gmail_error) {
+                $dbh->do("ABORT");
+                if ($gmail_error eq "invalid email address") {
+                    $error = $gmail_error;
+                }
+                else {
+                    $error = "something weird";
+                    $self->app->log->error("unhandled gmail error: gmail_error");
+                }
+            }
+            else {
+                $dbh->do("COMMIT");
+            }
+        }
     }
     if ($error) {
         return $self->render_json({error => $error});
@@ -107,20 +138,33 @@ get '/verify' => sub {
     my $self = shift;
     my $name = $self->param("name");
     my $code = $self->param("code");
-    my $gimme = $self->param("gimme");
+    my $gimme = $self->param("gimme") || "human";
     my $hashed = $dbh->selectrow_array(
         "SELECT password FROM people
         WHERE username = ?", undef, $name
     );
     my ($expected) = $hashed =~ /(.{7})$/;
+
     if ($code eq $expected) {
         $dbh->do("UPDATE people SET registered = now()
             WHERE username = ?", undef, $name);
         $self->session(user => $name);
-        return $self->render_json({ okay => ":D" });
+        if ($gimme eq "json") {
+            $self->render_json({ okay => ":D" });
+        }
+        else {
+            $self->flash(verified => "yes");
+            $self->redirect_to("index");
+        }
     }
     else {
-        return $self->render_json({ error => "invalid" });
+        if ($gimme eq "json") {
+            $self->render_json({ error => "invalid" });
+        }
+        else {
+            $self->flash(verified => "fail");
+            $self->redirect_to("index");
+        }
     }
 };
 
@@ -213,6 +257,71 @@ sub write_tap_details {
     $dbh->do("delete from tap_details where tid = ?", undef, $tid);
     $insert_tap_details->execute($tid, @_);
     return read_tap_details($tid);
+}
+
+sub unpack_uri_latlng {
+    my $string = shift || '';
+    my ($lat, $lng) = $string =~ m{\A ( -?\d+\.?\d* ) , ( -?\d+\.?\d* ) \Z}xs;
+    return ($lat, $lng);
+}
+
+sub setup_email {
+    my $secrets = LoadFile(app->home."/.secrets");
+    my $email_password = $secrets->{email_password};
+    die "undef email password" unless $email_password;
+    my $email_sender = Email::Send->new({
+        mailer => 'Gmail',
+        mailer_args => [
+            username => $email_from,
+            password => $email_password,
+        ],
+    });
+    return $email_sender;
+}
+
+sub send_email {
+    my $email_to = shift;
+    my $order = shift;
+
+    my ($subject, $message);
+    if ($order eq "verification") {
+        my ($code, $name) = @_;
+        my $uri = new URI($site_url);
+        $uri->query_form(name => $name, code => $code);
+        $message = <<"EOEMAIL";
+Hello $name,
+
+Welcome to taps.gen.nz! Your verification code is: $code
+
+You can independently click here:
+  $uri
+
+Thank you for your participation!
+Steve.
+EOEMAIL
+        $subject = "Welcome to taps.gen.nz";
+    }
+    else {
+        app->log->error("unhandled call to send_email: @_");
+    }
+
+    my $email = Email::Simple->create(
+        header => [
+            From => $email_from,
+            To => $email_to,
+            Subject => $subject,
+        ],
+        body => $message,
+    );
+
+    eval { $email_sender->send($email) };
+
+    if ($@) {
+        app->log->error("Error sending email: $@");
+        return $@;
+    }
+
+    return undef
 }
 
 app->start;

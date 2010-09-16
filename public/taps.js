@@ -448,6 +448,8 @@ function edit_tap_submit(tap) {
               nozzled: tap.details.nozzled },
             function (tapdetails) {
                 tap.details = tapdetails;
+                tap.tid = tap.details.tid;
+                console.log("created", tap);
                 tap_details(tap);
             }
         );

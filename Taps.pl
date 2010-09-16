@@ -179,7 +179,8 @@ get '/create_tap' => sub {
     my $self = shift;
     my $lat = $self->param("lat");
     my $lng = $self->param("lng");
-    my $tid = $insert_new_tap->execute($lat, $lng);
+    $insert_new_tap->execute($lat, $lng);
+    my ($tid) = $insert_new_tap->fetchrow_array();
 
     $self->app->log->debug("new tap tid: $tid");
 

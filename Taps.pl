@@ -28,7 +28,7 @@ my $insert_new_tap = $dbh->prepare(q {
     RETURNING tid
 });
 my $insert_tap_details = $dbh->prepare(q {
-    INSERT INTO tap_details (tid, blurb, no_handle, nozzled) VALUES (?, ?, ?, ?)
+    INSERT INTO tap_details (tid, blurb, no_handle, nozzled, person) VALUES (?, ?, ?, ?, ?)
 });
 my $select_tap_details = $dbh->prepare(q {
     SELECT tid, blurb, no_handle, nozzled FROM tap_details
@@ -283,6 +283,7 @@ get '/create_tap' => sub {
         $self->param("blurb"),
         $self->param("no_handle"),
         $self->param("nozzled"),
+        $self->session("user");
     );
 
     $self->render_json($tap);

@@ -152,6 +152,8 @@ get '/recover' => sub {
     unless ($hashed) {
         return $self->render_json({error => "email not found"});
     }
+    $hashed = password((split(/\$/, $hashed))[-1].localtime().rand());
+    $dbh->do("UPDATE people SET password = ? WHERE username = ?", undef, $hashed, $name);
     my $code = hashed_to_secretcode($hashed);
     my $email_error = send_email($email, "recovery", $code);
     $self->app->log->error("recover email error: $email_error") if $email_error;

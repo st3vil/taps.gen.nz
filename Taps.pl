@@ -283,7 +283,7 @@ get '/create_tap' => sub {
         $self->param("blurb"),
         $self->param("no_handle"),
         $self->param("nozzled"),
-        $self->session("user");
+        $self->session("user"),
     );
 
     $self->render_json($tap);

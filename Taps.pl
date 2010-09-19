@@ -1,5 +1,8 @@
 #!/usr/bin/env perl
 
+use FindBin '$Bin';
+use lib glob("$Bin/libs/*");
+
 use Mojolicious::Lite;
 use Crypt::Password;
 use Email::Send;

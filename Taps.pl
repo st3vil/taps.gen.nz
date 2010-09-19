@@ -246,6 +246,7 @@ get '/edit_tap_details' => sub {
         $self->param("blurb"),
         $self->param("no_handle"),
         $self->param("nozzled"),
+        undef,
     );
     $self->render_json($tap);
 };

@@ -390,7 +390,9 @@ function tap_details(tap) {
             +'<label for="lovely">Nozzled</label>';
     }
     content += '<br/>';
-    content += '<span class="link" id="edit_tap_button" onclick="edit_tap();">edit</span>';
+    if (user) {
+        content += '<span class="link" id="edit_tap_button" onclick="edit_tap();">edit</span>';
+    }
     content += '</span>';
     bubble.open(tap, content);
 }

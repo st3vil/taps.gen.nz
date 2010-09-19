@@ -1,12 +1,14 @@
 var map;
 var tapset = {};
-var server = "http://taps.gen.nz/";
+var server;
 var ajax_busy = 0;
 var ajax_too_soon = 0;
 var oldzoom = 17;
 var showing_taps = 1;
 var user;
 function initialise() {
+    server = $("#server").val();
+
     var latlng = new google.maps.LatLng(-41.31532674688257, 174.78381760978698);
     map = new google.maps.Map(
         document.getElementById("map_canvas"),
@@ -38,8 +40,8 @@ function initialise() {
 
 // {{{ users
 function check_login() {
-    $.getJSON(
-        server + 'check_login',
+    getjson(
+        'check_login',
         {},
         function (result) {
             if (result.logged_in) {
@@ -60,8 +62,8 @@ function user_login_form_submit () {
     $("#user_login_form").addClass("thinking");
     var name = $("#login_name").val();
     var password = $("#login_password").val();
-    $.getJSON(
-        server + 'login',
+    getjson(
+        'login',
         { user: name,
           password: password },
         function (result) {
@@ -112,8 +114,8 @@ function user_registration_form_submit () {
     var password = $("#register_password").val();
     var password2 = $("#register_password2").val();
     var email = $("#register_email").val();
-    $.getJSON(
-        server + 'register',
+    getjson(
+        'register',
         { name: name,
           password: password,
           password2: password2,
@@ -134,8 +136,8 @@ function user_registration_form_submit () {
 function user_registration_verify_code () {
     var code = $("#secret_code").val();
     var name = $("#verify_username").val();
-    $.getJSON(
-        server + 'verify',
+    getjson(
+        'verify',
         { code: code,
           name: name,
           gimme: "json"},
@@ -179,8 +181,8 @@ function cancel_usering (almost) {
     }
 }
 function user_logout () {
-    $.getJSON(
-        server + 'logout',
+    getjson(
+        'logout',
         {},
         function (result) {
             $("#user_hello").fadeOut();
@@ -202,8 +204,8 @@ var user_recovery_name;
 function user_login_recovery_submit () {
     $("#user_recovery").addClass("thinking");
     var email = $("#recovery_email").val();
-    $.getJSON(
-        server + 'recover',
+    getjson(
+        'recover',
         { email: email },
         function (res) {
             if (res.error) {
@@ -222,8 +224,8 @@ function user_login_recovery_submit () {
 function user_login_recovery_verify () {
     $("#user_recovery").addClass("thinking");
     var code = $("#recovery_secret").val();
-    $.getJSON(
-        server + 'verify',
+    getjson(
+        'verify',
         { name: user_recovery_name,
           code: code,
           gimme: "json" },
@@ -254,8 +256,8 @@ function user_password_change_submit () {
     $("#user_passwordchange").addClass("thinking");
     var password = $("#change_password").val();
     var password2 = $("#change_password2").val();
-    $.getJSON(
-        server + 'changepass',
+    getjson(
+        'changepass',
         { password: password,
           password2: password2 },
         function (res) {
@@ -367,8 +369,8 @@ function Bubble () {
 // {{{ details
 function tap_details(tap) {
     if (!tap.details) {
-        $.getJSON(
-            server + "tap_details",
+        getjson(
+            "tap_details",
             { tid: tap.tid },
             function (tapdetails) {
                 tap.details = tapdetails;
@@ -490,8 +492,8 @@ function edit_tap_delete_surely(tap) {
     if (!tap) {
         tap = bubble.current_thing;
     }
-    $.getJSON(
-        server + 'delete_tap',
+    getjson(
+        'delete_tap',
         { tid: tap.tid },
         function (result) {
             unplace_tap(tap);
@@ -519,8 +521,8 @@ function edit_tap_submit(tap) {
     tap.details.nozzled = $("#edit_tap_nozzled:checked").length;
 
     if (tap.tid) {
-        $.getJSON(
-            server + "edit_tap_details",
+        getjson(
+            "edit_tap_details",
             { tid: tap.tid,
               blurb: tap.details.blurb,
               no_handle: tap.details.no_handle,
@@ -532,8 +534,8 @@ function edit_tap_submit(tap) {
         );
     }
     else {
-        $.getJSON(
-            server + "create_tap",
+        getjson(
+            "create_tap",
             { lat: tap.lat,
               lng: tap.lng,
               blurb: tap.details.blurb,
@@ -581,8 +583,8 @@ function move_tap_save (tap) {
     $("#move_tap_dial").addClass("thinking");
     tap.marker.setDraggable(false);
     var newplace = tap.marker.getPosition();
-    $.getJSON(
-        server + 'move_tap',
+    getjson(
+        'move_tap',
         { tid: tap.tid,
           location: newplace.toUrlValue() },
         function (tap) {
@@ -640,8 +642,8 @@ function refresh_taps() {
     }
     var northEast = bounds.getNorthEast();
     var southWest = bounds.getSouthWest();
-    $.getJSON(
-        server + "get_taps_in_bounds",
+    getjson(
+        "get_taps_in_bounds",
         { ne_bound: northEast.toUrlValue(),
           sw_bound: southWest.toUrlValue() },
         function (newtapset) {
@@ -702,3 +704,13 @@ function unplace_tap(tapish) {
 }
 /// }}}
 
+function getjson (func, params, handler) {
+    if (!server) {
+        return;
+    }
+    $.getJSON(
+        server + func,
+        params,
+        handler
+    );
+}

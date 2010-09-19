@@ -9,6 +9,7 @@
 <script type="text/javascript" src="/taps.js"></script>
 </head>
 <body onload="initialise()">
+<input type="hidden" id="server" value="<%== $server %>">
 <%== content %>
 <div id="menu">
  <div id="menu_create" style="display:none">

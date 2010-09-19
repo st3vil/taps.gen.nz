@@ -35,7 +35,10 @@ my $select_tap_details = $dbh->prepare(q {
     WHERE tid = ?
 });
 
-get '/' => 'index';
+get '/' => sub {
+    my $self = shift;
+    $self->render(server => $site_url);
+} => 'index';
 
 get '/aboutus' => 'aboutus';
 

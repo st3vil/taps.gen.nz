@@ -12,7 +12,7 @@ use YAML::Syck;
 use DBI;
 use URI;
 
-my $site_url = "http://taps.gen.nz:3000/";
+my $site_url = "http://".(`hostname` =~ /steve/ ? "dev." : "")."taps.gen.nz/";
 
 my $email_from = 'taps.gen.nz@gmail.com';
 my $email_sender = setup_email();

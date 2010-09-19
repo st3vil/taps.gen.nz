@@ -387,7 +387,7 @@ EOEMAIL
 
 sub hashed_to_secretcode {
     my $hashed = shift;
-    $hashed =~ s/[^\w]//m;
+    $hashed =~ s/[^\w]//g;
     return substr $hashed, -7;
 }
 

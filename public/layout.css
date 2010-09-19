@@ -10,6 +10,13 @@ bottom: 20px;
 height: 17em; width: 7em;
 }
 .link { color: blue; text-decoration: underline; font-size: small }
+#ad {
+    position: fixed;
+    top: 2px;
+    right: 2px;
+    z-index: 51035845;
+    border: 2px solid pink;
+}
 #edit_tap_blurb {
     border:1px solid black;
 }

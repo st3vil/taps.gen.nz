@@ -329,6 +329,7 @@ sub send_email {
     if ($order eq "verification") {
         my ($code, $name) = @_;
         my $uri = new URI($site_url);
+        $uri->path("verify");
         $uri->query_form(name => $name, code => $code);
         $subject = "Welcome";
         $message = <<"EOEMAIL";

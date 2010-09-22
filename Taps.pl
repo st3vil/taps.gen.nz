@@ -2,6 +2,7 @@
 
 use FindBin '$Bin';
 use lib glob("$Bin/include/*");
+use lib "$Bin/lib";
 
 use Mojolicious::Lite;
 use Crypt::Password;
@@ -9,15 +10,17 @@ use Email::Send;
 use Email::Send::Gmail;
 use Email::Simple::Creator;
 use YAML::Syck;
-use DBI;
 use URI;
+use TapDB;
 
 my $site_url = "http://".(`hostname` =~ /steve/ ? "dev." : "")."taps.gen.nz/";
 
 my $email_from = 'taps.gen.nz@gmail.com';
 my $email_sender = setup_email();
 
-my $dbh = DBI->connect('dbi:Pg:dbname=taps') or die $!;
+my $db = TapDB->connect('dbi:Pg:dbname=taps');
+my $dbh = $db->storage->dbh;
+
 my $select_taps_in_bounds = $dbh->prepare(q {
     SELECT tid, lat, lng FROM tap_loc
     WHERE lat <= ? AND lat >= ?

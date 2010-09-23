@@ -72,14 +72,18 @@ get '/login' => sub {
         WHERE username = ?", undef, $user
     );
     unless ($hashed) {
+        $self->app->log->info("Auth failed: no such user: $user");
         return $self->render_json({ error => "no such user" });
     }
     unless ($registered) {
+        $self->app->log->info("Auth failed: not verified: $user");
         return $self->render_json({ error => "unverified"});
     }
     unless (password($hashed)->check($pass)) {
+        $self->app->log->info("Auth failed: bad password: $user/$pass");
         return $self->render_json({ error => "bad password" });
     }
+    $self->app->log->info("Auth okay: $user");
     $self->session(user => $user);
     return $self->render_json({ okay => ":D" });
 };
@@ -105,6 +109,7 @@ get '/register' => sub {
     }
     unless ($error) {
         $dbh->do("BEGIN");
+        $self->app->log->info("Register: user=$name, email=$email");
         my $hashed = password($password);
         my $rc = $dbh->do("INSERT INTO people (username, password, email)
             VALUES (?, ?, ?)", undef,          $name,    $hashed,  $email
@@ -122,6 +127,7 @@ get '/register' => sub {
         }
         else {
             my $code = hashed_to_secretcode($hashed);
+            $self->app->log->info("Register: sending email");
             my $gmail_error = send_email($email, "verification", $code, $name);
             if ($gmail_error) {
                 $dbh->do("ABORT");
@@ -139,26 +145,32 @@ get '/register' => sub {
         }
     }
     if ($error) {
+        $self->app->log->info("Register: failed: $error");
         return $self->render_json({error => $error});
     }
+    $self->app->log->info("Register: done");
     return $self->render_json({yeah => $@});
 };
 
 get '/recover' => sub {
     my $self = shift;
     my $email = $self->param("email");
+    $self->app->log->info("Recover: email=$email");
     my ($name, $hashed) = $dbh->selectrow_array(
         "SELECT username, password FROM people
         WHERE email = ?", undef, $email
     );
     unless ($hashed) {
+        $self->app->log->info("Recover: email not found");
         return $self->render_json({error => "email not found"});
     }
     $hashed = password((split(/\$/, $hashed))[-1].localtime().rand());
     $dbh->do("UPDATE people SET password = ? WHERE username = ?", undef, $hashed, $name);
     my $code = hashed_to_secretcode($hashed);
+    $self->app->log->info("Recover: name=$name code=$code");
     my $email_error = send_email($email, "recovery", $code);
     $self->app->log->error("recover email error: $email_error") if $email_error;
+    $self->app->log->info("Recover: done.");
     $self->render_json({done => $name});
 };
 
@@ -167,16 +179,19 @@ get '/verify' => sub {
     my $name = $self->param("name");
     my $code = $self->param("code");
     my $gimme = $self->param("gimme") || "human";
+    $self->app->log->info("Verify: name=$name code=$code for=$gimme");
     my $hashed = $dbh->selectrow_array(
         "SELECT password FROM people
         WHERE username = ?", undef, $name
     );
     unless ($hashed) {
+        $self->app->log->info("Verify: name not found");
         $self->render_json({ error => "invalid" });
     }
     my $expected = hashed_to_secretcode($hashed);
 
     if ($code eq $expected) {
+        $self->app->log->info("Verify: okay");
         $dbh->do("UPDATE people SET registered = now()
             WHERE username = ?", undef, $name);
         $self->session(user => $name);
@@ -189,6 +204,7 @@ get '/verify' => sub {
         }
     }
     else {
+        $self->app->log->info("Verify: failed ($code ne $expected)");
         if ($gimme eq "json") {
             $self->render_json({ error => "invalid" });
         }
@@ -202,6 +218,7 @@ get '/verify' => sub {
 get '/check_login' => sub {
     my $self = shift;
     my $name = $self->session("user");
+    $self->app->log->info("Check Login: ".($name?"user=$name":"negatory"));
     return $self->render_json(
         $name ? { logged_in => $name } : { not => ":O" }
     );
@@ -209,6 +226,7 @@ get '/check_login' => sub {
 
 get '/logout' => sub {
     my $self = shift;
+    $self->app->log->info("Logout: user=".$self->session("user"));
     $self->session(expires => 1);
     return $self->render_json({ okay => ":(" });
 };
@@ -238,11 +256,13 @@ get '/changepass' => sub {
             undef, $hashed, $name);
         $response = "password changed!"
     }
+    $self->app->log->info("Changepass: $response");
     $self->render_json($response);
 };
 
 get '/edit_tap_details' => sub {
     my $self = shift;
+    $self->app->log->info("Edit Tap Details: $tap");
     my $tap = write_tap_details(
         $self->param("tid"),
         $self->param("blurb"),
@@ -259,6 +279,7 @@ get '/move_tap' => sub {
     my ($lat, $lng) = $self->param("location") =~
         m{\A( -?\d+\.?\d* ),( -?\d+\.?\d* )\Z}xs;
 
+    $self->app->log->info("Move Tap: $tid to $lat, $lng");
     $dbh->do("UPDATE tap_loc SET lat = ?, lng = ? WHERE tid = ?",
         undef, $lat, $lng, $tid);
     $self->render_json({okay=>":)"});
@@ -267,6 +288,7 @@ get '/move_tap' => sub {
 get '/delete_tap' => sub {
     my $self = shift;
     my $tid = $self->param("tid");
+    $self->app->log->info("Delete Tap: $tid");
     $dbh->do("DELETE FROM tap_loc WHERE tid = ?", undef, $tid);
 
     $self->render_json({okay=>"gone"});
@@ -276,10 +298,11 @@ get '/create_tap' => sub {
     my $self = shift;
     my $lat = $self->param("lat");
     my $lng = $self->param("lng");
+    $self->app->log->info("Create Tap: $lat, $lng");
     $insert_new_tap->execute($lat, $lng);
     my ($tid) = $insert_new_tap->fetchrow_array();
 
-    $self->app->log->debug("new tap tid: $tid");
+    $self->app->log->info("Create Tap: tid=$tid");
 
     my $tap = write_tap_details(
         $tid,
@@ -340,6 +363,7 @@ sub send_email {
     my ($subject, $message);
     if ($order eq "verification") {
         my ($code, $name) = @_;
+        $self->app->log->info("Send Email: Welcome: to=$email_to code=$code name=$name");
         my $uri = new URI($site_url);
         $uri->path("verify");
         $uri->query_form(name => $name, code => $code);
@@ -358,6 +382,7 @@ EOEMAIL
     }
     elsif ($order eq "recovery") {
         my ($code) = @_;
+        $self->app->log->info("Send Email: Recovery: to=$email_to code=$code");
         $subject = "Password Recovery";
         $message = <<"EOEMAIL";
 Hello Mr/Mrs Forgetful!

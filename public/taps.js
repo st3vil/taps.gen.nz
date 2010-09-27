@@ -395,6 +395,9 @@ function tap_details(tap) {
     if (user) {
         content += '<span class="link" id="edit_tap_button" onclick="edit_tap();">edit</span>';
     }
+    content += '<span class="byline">discovered by <span class="who link">'
+        +tap.details.discovered_by+
+        '</span></span>';
     content += '</span>';
     bubble.open(tap, content);
 }

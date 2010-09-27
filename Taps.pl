@@ -26,8 +26,10 @@ my $select_taps_in_bounds = $dbh->prepare(q {
       AND lng <= ? AND lng >= ?
 });
 my $select_tap_details = $dbh->prepare(q {
-    SELECT tid, blurb, no_handle, nozzled FROM tap_details
-    WHERE tid = ?
+    SELECT l.tid, l.discovered_by, d.blurb, d.no_handle, d.nozzled
+    FROM tap_loc l
+    JOIN tap_details d USING (tid)
+    WHERE l.tid = ?
 });
 
 get '/' => sub {
@@ -338,6 +340,7 @@ sub read_tap_details {
         blurb => $tap->{blurb} || "Water!",
         no_handle => $tap->{no_handle},
         nozzled => $tap->{nozzled},
+        discovered_by => $tap->{discovered_by},
     }
 }
 
@@ -368,17 +371,16 @@ sub write_tap_details {
         push @changed, [ "touched_by", undef, $new->{user} ];
         my $update_fields = { map { $_->[0] => $_->[2] } @changed };
         my ($sql, @params) = make_update_sql("tap_details", $update_fields);
-        $new_tap = sql_one("$sql WHERE tid = ? RETURNING *", @params, $new->{tid});
+        sql_one("$sql WHERE tid = ?", @params, $new->{tid});
     }
     else {
-        $new_tap = sql_one("INSERT INTO tap_details ("
+        sql_one("INSERT INTO tap_details ("
             ."tid, blurb, no_handle, nozzled, touched_by"
-            .") VALUES (?, ?, ?, ?, ?) RETURNING *",
+            .") VALUES (?, ?, ?, ?, ?)",
             map { $new->{$_} } qw{tid blurb no_handle nozzled}
         );
     }
-
-    return $new_tap
+    return read_tap_details($new->{tid});
 }
 
 sub unpack_uri_latlng {

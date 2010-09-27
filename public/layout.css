@@ -56,3 +56,12 @@ label {
     padding: 1em;
     bottom: 4em;
 }
+
+.byline {
+font-size: 8pt;
+color: gray;
+float: right;
+}
+.who {
+font-weight:bold;
+}

@@ -95,3 +95,10 @@ float: right;
 .who {
 font-weight:bold;
 }
+#aboutus {
+    border: 1px dotted black;
+    padding: 0.5em;
+    position: absolute;
+    left: 1em;
+    background: gray;
+}

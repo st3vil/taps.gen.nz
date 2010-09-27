@@ -116,7 +116,7 @@ src="http://pagead2.googlesyndication.com/pagead/show_ads.js">
   </span>
 
  </div>
- <a href="/aboutus" style="position:absolute;bottom:0px;">About Us</a>
+ <a href="/aboutus" id="aboutus">About Us</a>
 </div>
 <div id="map_canvas" style="width:100%; height:100%"></div>
 </body>

@@ -32,16 +32,27 @@ src="http://pagead2.googlesyndication.com/pagead/show_ads.js">
    <input id="cancel_create_tap_button" type="button" value="Cancel" onclick="stop_creating_tap();" style="display:none">
    <span id="create_tap_howto" class="popoutey" style="display:none">Now click where on the map...</span>
  </div>
+ 
  <span id="not_showing_taps" class="popoutey" style="display:none">Zoom in to see the taps</span>
+ 
  <div id="menu_user">
   <h5>The Users</h5>
-
   <span id="user_non">
    <span id="user_login" class="link" onclick="the_user_login_form();">login</span> or
    <span id="user_register" class="link" onclick="the_user_registration_form();">register</span>
   </span>
   <input id="cancel_usering_button" type="button" value="Cancel" onclick="cancel_usering();" style="display:none">
   <span id="the_angry_popout" style="display:none;" class="angry popoutey"></span>
+
+  <span id="user_hello" style="display:none">
+   Hello <span id="user_hello_name">you</span>!
+   <span id="user_menu" class="link">^^
+    <span id="user_menu_hidden">
+     <span id="user_logout" onclick="user_logout();" class="link">logout</span><br/>
+     <span id="user_password_change" onclick="user_password_change();" class="link">chng pw</span>
+    </span>
+   </span>
+  </span>
 
   <span id="user_login_form" class="popoutey" style="display:none">
    <form action="#" name="user_login_form">
@@ -75,12 +86,6 @@ src="http://pagead2.googlesyndication.com/pagead/show_ads.js">
    <input type="hidden" name="verify_username" id="verify_username">
    <p style="display:none" class="angry" id="verify_failed_words">Failed! Did you copy it out right? Try again? <span class="link" onclick="close_regverify_open_recover_password();">Recover your password</span>?</p>
    <span id="secret_code_submit" class="link" onclick="user_registration_verify_code();">verify</span>
-  </span>
-
-  <span id="user_hello" style="display:none">
-   Hello <span id="user_hello_name">you</span>!<br/>
-   <span id="user_logout" onclick="user_logout();" class="link">logout</span><br/>
-   <span id="user_password_change" onclick="user_password_change();" class="link">chng pw</span>
   </span>
 
   <span id="user_recovery" class="popoutey" style="display:none">

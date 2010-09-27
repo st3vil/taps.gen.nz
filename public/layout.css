@@ -1,23 +1,70 @@
-  html { height: 100% }
-  body { height: 100%; margin: 0px; padding: 0px }
-  #map_canvas { height: 100%;}
+html { height: 100% }
+body { height: 100%; margin: 0px; padding: 0px }
+#map_canvas { height: 100%;}
 #menu {
 z-index: 15000;
-background-color: gray;
 position: absolute;
 right: 0px;
 bottom: 20px;
-height: 17em; width: 7em;
+width: 100%;
+height:4em;
+font-size: -1pt;
+font-family: monospace;
 }
-.link { color: blue; text-decoration: underline; font-size: small }
-#ad {
+#menu div { background-color: gray }
+#menu_create, #menu_user {
+    border: 1px dotted black;
+    padding: 2px;
+    height: 3.5em;
+}
+#user_hello_name { overflow: hidden }
+#menu_user {
+    position: absolute;
+    right: 1em;
+    width: 10em;
+}
+#user_menu {
+    position: absolute;
+    top: 1px;
+    right: 1px;
+    display: block;
+}
+#user_menu_hidden {
+    display: none;
+    position: absolute;
+    bottom: 1em;
+    right: 0em;
+    float:right;
+    background-color: gray;
+    width: 10em;
+    padding: 1em;
+    border: 1px dotted black;
+    border-bottom:none;
+}
+#user_menu:hover #user_menu_hidden, #user_menu_hidden:hover {
+    display: block;
+}
+#menu_create {
     position: fixed;
-    top: 2px;
-    right: 2px;
-    z-index: 51035845;
+    right: 12em;
+    width: 10em;
+}
+
+#menu_create input { width: 100%; margin: 1px; }
+#menu h5, h4 { margin: 2px; }
+.link {
+color: blue;
+text-decoration: underline;
+font-size: small
+}
+#ad {
+position: fixed;
+top: 2px;
+right: 2px;
+z-index: 51035845;
 }
 #edit_tap_blurb {
-    border:1px solid black;
+border:1px solid black;
 }
 .thinking { opacity: 0.4 }
 #tap_details { width: 30em }
@@ -28,27 +75,10 @@ top: 4px;
 }
 #edit_tap_blurb { width:20em; height:7em }
 label {
-    font-size: small;
-    color: gray;
+font-size: small;
+color: gray;
 }
-#menu {
-    padding: 1px;
-    font-size: -1pt;
-    font-family: monospace;
-}
-#menu_create, #menu_user {
-    border: 1px dotted black;
-    height: 33%;
-    padding: 3px;
-    margin: 1px;
-}
-#menu_create input {
-    width: 100%;
-    margin: 1px;
-}
-#menu_user { height: auto }
 .angry { color:red; font-weight:bold }
-#menu h5, h4 { margin: 2px; }
 .popoutey {
     position: absolute;
     right: 7em;

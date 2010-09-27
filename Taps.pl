@@ -25,13 +25,6 @@ my $select_taps_in_bounds = $dbh->prepare(q {
     WHERE lat <= ? AND lat >= ?
       AND lng <= ? AND lng >= ?
 });
-my $insert_new_tap = $dbh->prepare(q {
-    INSERT INTO tap_loc (lat, lng) VALUES (?, ?)
-    RETURNING tid
-});
-my $insert_tap_details = $dbh->prepare(q {
-    INSERT INTO tap_details (tid, blurb, no_handle, nozzled, person) VALUES (?, ?, ?, ?, ?)
-});
 my $select_tap_details = $dbh->prepare(q {
     SELECT tid, blurb, no_handle, nozzled FROM tap_details
     WHERE tid = ?
@@ -59,7 +52,9 @@ get '/get_taps_in_bounds' => sub {
 
 get '/tap_details' => sub {
     my $self = shift;
-    my $tap = read_tap_details($self->param("tid"));
+    my $tid = $self->param("tid");
+    $tid or die "no tid param";
+    my $tap = read_tap_details($tid);
     $self->render_json($tap);
 };
 
@@ -262,14 +257,14 @@ get '/changepass' => sub {
 
 get '/edit_tap_details' => sub {
     my $self = shift;
-    $self->app->log->info("Edit Tap Details: $tap");
-    my $tap = write_tap_details(
-        $self->param("tid"),
-        $self->param("blurb"),
-        $self->param("no_handle"),
-        $self->param("nozzled"),
-        undef,
-    );
+    $self->app->log->info("Edit Tap Details: ".$self->param("tid"));
+    my $tap = write_tap_details({
+        tid => $self->param("tid"),
+        blurb => $self->param("blurb"),
+        no_handle => $self->param("no_handle"),
+        nozzled => $self->param("nozzled"),
+        user => $self->session("user"),
+    });
     $self->render_json($tap);
 };
 
@@ -298,22 +293,40 @@ get '/create_tap' => sub {
     my $self = shift;
     my $lat = $self->param("lat");
     my $lng = $self->param("lng");
-    $self->app->log->info("Create Tap: $lat, $lng");
-    $insert_new_tap->execute($lat, $lng);
-    my ($tid) = $insert_new_tap->fetchrow_array();
+    $self->app->log->info("Create Tap: $lat, $lng by ". $self->session("user"));
 
+    my $tap_loc = sql_one("INSERT INTO tap_loc (lat, lng, discovered_by, touched_by)"
+        ."VALUES (?, ?, ?, ?) RETURNING *", $lat, $lng, ($self->session("user"))x2);
+
+    my $tid = $tap_loc->{tid};
     $self->app->log->info("Create Tap: tid=$tid");
 
-    my $tap = write_tap_details(
-        $tid,
-        $self->param("blurb"),
-        $self->param("no_handle"),
-        $self->param("nozzled"),
-        $self->session("user"),
-    );
+    my $tap = write_tap_details({
+        tid => $tid,
+        blurb => $self->param("blurb"),
+        no_handle => $self->param("no_handle"),
+        nozzled => $self->param("nozzled"),
+        user => $self->session("user"),
+    });
 
     $self->render_json($tap);
 };
+
+sub sql {
+    my ($sql, @bind) = @_;
+    $dbh->selectall_arrayref($sql, {Slice=>{}}, @bind);
+}
+sub sql_one {
+    my ($sql, @bind) = @_;
+    return shift @{ $dbh->selectall_arrayref($sql, {Slice=>{}}, @bind) };
+}
+sub make_update_sql {
+    my ($table, $setfields) = @_;
+    my @params;
+    my $sql = "UPDATE $table SET ". join(", ",
+        map { push @params, $setfields->{$_}; "$_ = ?" } keys %$setfields);
+    return ($sql, @params);
+}
 
 sub read_tap_details {
     my $tid = shift;
@@ -329,11 +342,43 @@ sub read_tap_details {
 }
 
 sub write_tap_details {
-    my $tid = shift;
-    # replace this with a pl/pgsql history function
-    $dbh->do("delete from tap_details where tid = ?", undef, $tid);
-    $insert_tap_details->execute($tid, @_);
-    return read_tap_details($tid);
+    my $new = shift;
+
+    $new->{tid} || die "no tap id (tid)";
+
+    my $tap = sql_one("SELECT * FROM tap_details WHERE tid = ?", $new->{tid});
+    my $new_tap;
+
+    if (exists $tap->{blurb}) {
+        my @changed;
+        for (qw{blurb no_handle nozzled}) {
+            if ($tap->{$_} ne $new->{$_}) {
+                push @changed, [$_, $tap->{$_}, $new->{$_}];
+            }
+        }
+        unless (@changed) {
+            app->log->info("Nothing changed on $new->{tid}");
+            return $tap;
+        }
+        else {
+            app->log->info(join("\n", "Updating tap $new->{tid}:",
+                map { "  $_->[0]: '$_->[1]' -> '$_->[2]'" } @changed));
+        }
+
+        push @changed, [ "touched_by", undef, $new->{user} ];
+        my $update_fields = { map { $_->[0] => $_->[2] } @changed };
+        my ($sql, @params) = make_update_sql("tap_details", $update_fields);
+        $new_tap = sql_one("$sql WHERE tid = ? RETURNING *", @params, $new->{tid});
+    }
+    else {
+        $new_tap = sql_one("INSERT INTO tap_details ("
+            ."tid, blurb, no_handle, nozzled, touched_by"
+            .") VALUES (?, ?, ?, ?, ?) RETURNING *",
+            map { $new->{$_} } qw{tid blurb no_handle nozzled}
+        );
+    }
+
+    return $new_tap
 }
 
 sub unpack_uri_latlng {
@@ -363,7 +408,7 @@ sub send_email {
     my ($subject, $message);
     if ($order eq "verification") {
         my ($code, $name) = @_;
-        $self->app->log->info("Send Email: Welcome: to=$email_to code=$code name=$name");
+        app->log->info("Send Email: Welcome: to=$email_to code=$code name=$name");
         my $uri = new URI($site_url);
         $uri->path("verify");
         $uri->query_form(name => $name, code => $code);
@@ -382,7 +427,7 @@ EOEMAIL
     }
     elsif ($order eq "recovery") {
         my ($code) = @_;
-        $self->app->log->info("Send Email: Recovery: to=$email_to code=$code");
+        app->log->info("Send Email: Recovery: to=$email_to code=$code");
         $subject = "Password Recovery";
         $message = <<"EOEMAIL";
 Hello Mr/Mrs Forgetful!

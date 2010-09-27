@@ -437,12 +437,12 @@ function edit_tap(tap) {
     if (tap.details.no_handle) {
         content += ' checked="checked"';
     }
-    content += '><label for="no_handle">No handle</label><br/>';
+    content += '><label for="edit_tap_no_handle">No handle</label><br/>';
     content += '<input type="checkbox" name="nozzled" id="edit_tap_nozzled"';
     if (tap.details.nozzled) {
         content += ' checked="checked"';
     }
-    content += '><label for="nozzled">Nozzled</label><br/>' +
+    content += '><label for="edit_tap_nozzled">Nozzled</label><br/>' +
 '<span class="link" id="save_tap_button" onclick="edit_tap_submit();">save</span> ';
     if (tap.tid) {
         content += '<span class="link" id="delete_tap_button" onclick="edit_tap_delete();">delete</span> ' +

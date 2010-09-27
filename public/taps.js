@@ -360,8 +360,10 @@ function Bubble () {
         this.current_thing = thing;
     }
     function close () {
-        infowindow.close();
-        infowindow = null;
+        if (infowindow != null) {
+            infowindow.close();
+            infowindow = null;
+        }
     }
 }
 // }}}
@@ -589,7 +591,7 @@ function move_tap_save (tap) {
         'move_tap',
         { tid: tap.tid,
           location: newplace.toUrlValue() },
-        function (tap) {
+        function (stuff) {
             delete tap.original_position;
             tap_details(tap);
         }

@@ -415,7 +415,9 @@ function create_tap() {
             edit_tap(almost_a_tap);
         }
     );
-    $("#cancel_create_tap_button").fadeIn();
+    
+    $("#create_tap_button").fadeOut();
+    setTimeout('$("#cancel_create_tap_button").fadeIn()', 500);
     $("#create_tap_howto").fadeIn();
 }
 
@@ -423,6 +425,7 @@ function stop_creating_tap() {
     google.maps.event.removeListener(almost_a_tap);
     $("#cancel_create_tap_button").fadeOut();
     $("#create_tap_howto").fadeOut();
+    setTimeout('$("#create_tap_button").fadeIn()', 500);
 }
 
 function edit_tap(tap) {

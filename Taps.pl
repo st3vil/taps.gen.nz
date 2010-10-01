@@ -377,7 +377,7 @@ sub write_tap_details {
         sql_one("INSERT INTO tap_details ("
             ."tid, blurb, no_handle, nozzled, touched_by"
             .") VALUES (?, ?, ?, ?, ?)",
-            map { $new->{$_} } qw{tid blurb no_handle nozzled}
+            map { $new->{$_} } qw{tid blurb no_handle nozzled user}
         );
     }
     return read_tap_details($new->{tid});
